@@ -39,12 +39,7 @@ const userSchema = new Schema({
   },
   usersLiked: [{ type: Schema.Types.ObjectId, ref: "User" }],
 
-  usersDisliked: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
-  ],
+  usersDisliked: [{type: Schema.Types.ObjectId,ref: "User",}]
 });
 
 module.exports = mongoose.model("Sauce", userSchema);

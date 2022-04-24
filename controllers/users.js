@@ -43,7 +43,7 @@ exports.postLogin = (req, res, next) => {
           if (!doPassMatch) {
             return res
               .status(401)
-              .json({ message: "Erreur: Mot the pass incorrect" });
+              .json({ message: "Erreur: mot the pass incorrect" });
           }
           // Valid Password
           res.status(200).json({

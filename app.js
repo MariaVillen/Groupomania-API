@@ -7,26 +7,33 @@ const userRoutes = require("./routes/user");
 const productRoutes = require("./routes/product");
 
 const MONGODB_URI = `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@cluster0.uwerq.mongodb.net/${process.env.MONGO_DEFAULT_DATABASE}?retryWrites=true&w=majority`;
+const allowedOrigins = JSON.parse(process.env.ORIGINS_ALLOWED);
 const app = express();
-
-// Routes protection
-app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // parse Post
 app.use(express.json());
 
+// Routes protection
+app.use(helmet({ crossOriginResourcePolicy: false }));
+
 // CORS authorisation
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+ // res.setHeader("Access-Control-Allow-Origin", '*'); 
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
   );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  next();
+  
+  return next();
 });
 
 // NO-SQL Injection protection

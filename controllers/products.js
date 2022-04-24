@@ -32,7 +32,7 @@ exports.postAddSauce = (req, res, next) => {
   if (req.mimetypeError) {
     return res.status(400).json({
       message:
-        "Erreur: Le fichier n'est pas dans un format valide: png, jpg ou jpeg",
+        "Erreur: le fichier n'est pas dans un format valide: png, jpg ou jpeg",
     });
   }
 
@@ -47,7 +47,7 @@ exports.postAddSauce = (req, res, next) => {
   sauce
     .save()
     .then(() => {
-      res.status(201).json({ message: "objet cree" });
+      res.status(201).json({ message: "Objet créé." });
     })
     .catch((err) => res.status(400).json({ message: "Erreur: " + err }));
 };
@@ -59,64 +59,93 @@ exports.postLikeSauce = (req, res, next) => {
   const userId = req.body.userId;
   const like = req.body.like;
 
-  // If like is 1, add a like if the user haven't liked it yet.
+  switch (like) {
+    case -1: // If like is -1, add a dislike if the user haven't disliked it yet.
+      Sauce.findOneAndUpdate(
+        {
+          _id: prodId,
+          usersDisliked: { $nin: userId },
+          usersLiked: { $nin: userId },
+        },
+        { $push: { usersDisliked: [userId] }, $inc: { dislikes: 1 } }
+      )
+        .then((state) => {
+          if (!state) {
+            throw new Error("Impossible d'exécuter l'action demandée: L'utilisateur a déjà réagi sur ce produit ou la sauce n'existe pas");
+          }
+          res.status(201).json({ message: "Dislike ajouté" });
+        })
+        .catch((err) =>
+          res.status(400).json({ message: "Erreur: " + err.message })
+        );
+      break;
 
-  if (like === 1) {
-    Sauce.findOneAndUpdate(
-      { _id: prodId, usersLiked: { $nin: userId } },
-      { $push: { usersLiked: [userId] }, $inc: { likes: +1 } }
-    )
-      .then(() => {
-        res.status(201).json({ message: "objet updated" });
-      })
-      .catch((err) => res.status(400).json({ message: "Erreur: " + err }));
+    case 0: // Remove like or dislike from the sauce.
+      let message;
 
-    // If like is -1, add a dislike if the user haven't disliked it yet.
-  } else if (like === -1) {
-    Sauce.findOneAndUpdate(
-      { _id: prodId, usersDisliked: { $nin: userId } },
-      { $push: { usersDisliked: [userId] }, $inc: { dislikes: 1 } }
-    )
-      .then(() => {
-        res.status(201).json({ message: "objet updated" });
-      })
-      .catch((err) => res.status(400).json({ message: "Erreur: " + err }));
+      Sauce.findOneAndUpdate(
+        { _id: prodId, usersDisliked: { $in: userId } },
+        { $pull: { usersDisliked: userId }, $inc: { dislikes: -1 } }
+      )
+        .then((state) => {
+          if (!state) {
+            return Sauce.findOneAndUpdate(
+              { _id: prodId, usersLiked: { $in: userId } },
+              { $pull: { usersLiked: userId }, $inc: { likes: -1 } }
+            );
+          } else {
+            message = "Dislike supprimé";
+          }
+        })
+        .then((likeFound) => {
+          if (likeFound) {
+            message = "Like supprimé";
+          } else if (!message) {
+            throw new Error(
+              "Impossible d'exécuter l'action demandée: Il n'y a pas like ou dislike fait par l'utilisateur ou la sauce n'existe pas"
+            );
+          }
+          res.status(201).json({ message: message });
+        })
+        .catch((error) => {
+          res.status(400).json({ message: "Erreur: " + error.message });
+        });
+      break;
 
-    // Remove like or dislike from the sauce.
-  } else {
-    Sauce.findOneAndUpdate(
-      { _id: prodId, usersDisliked: { $in: userId } },
-      { $pull: { usersDisliked: userId }, $inc: { dislikes: -1 } }
-    )
-      .then((state) => {
-        if (!state) {
-          return Sauce.findOneAndUpdate(
-            { _id: prodId, usersLiked: { $in: userId } },
-            { $pull: { usersLiked: userId }, $inc: { likes: -1 } }
-          );
-        }
-      })
-      .then(() => {
-        res.status(201).json({ message: "objet updated" });
-      })
-      .catch((err) => {
-        console.log(err);
-        res.status(400).json({ message: "Erreur: " + err });
-      });
+    case 1: // If like is 1, add a like if the user haven't liked it yet.
+      Sauce.findOneAndUpdate(
+        {
+          _id: prodId,
+          usersLiked: { $nin: userId },
+          usersDisliked: { $nin: userId },
+        },
+        { $push: { usersLiked: [userId] }, $inc: { likes: +1 } }
+      )
+        .then((state) => {
+          if (!state) {
+            throw new Error("Impossible d'exécuter l'action demandée: L'utilisateur a déjà réagi sur ce produit ou la sauce n'existe pas.");
+          }
+          res.status(201).json({ message: "Like ajouté" });
+        })
+        .catch((err) => {
+          res.status(400).json({ message: "Erreur: " + err.message });
+        });
+      break;
+
+    default:
+      res.status(400).json({ message: "Erreur: argument non valide." });
   }
 };
-
 // Remove sauce from DB
 
 exports.deleteSauce = (req, res, next) => {
   const prodId = req.params.id;
-  console.log(prodId);
   Sauce.findById(prodId)
     .then((sauce) => {
       const filename = sauce.imageUrl.split("/images/")[1];
       fs.unlink(`images/${filename}`, () => {
         Sauce.deleteOne({ _id: prodId })
-          .then(() => res.status(200).json({ message: "Objet suprimé" }))
+          .then(() => res.status(200).json({ message: "Objet supprimé" }))
           .catch((err) => res.status(400).json({ message: "Erreur: " + err }));
       });
     })
@@ -124,7 +153,6 @@ exports.deleteSauce = (req, res, next) => {
 };
 
 // Modify a Sauce
-
 exports.putUpdateSauce = (req, res, next) => {
   const prodId = req.params.id;
   if (req.file) {
@@ -139,7 +167,11 @@ exports.putUpdateSauce = (req, res, next) => {
         fs.unlink(`images/${filename}`, () => {
           Sauce.updateOne(
             { _id: prodId },
-            { ...req.body, _id: prodId, imageUrl: sentImageUrl }
+            {
+              ...JSON.parse(req.body.sauce),
+              _id: prodId,
+              imageUrl: sentImageUrl,
+            }
           )
             .then(() => {
               res.status(200).json({ message: "Objet modifié" });
@@ -151,14 +183,13 @@ exports.putUpdateSauce = (req, res, next) => {
       })
       .catch((err) => res.status(500).json({ message: "Erreur: " + err }));
   } else {
-
+    console.log(req.body);
     // Updating data sauce when image was not changed
     Sauce.updateOne({ _id: prodId }, { ...req.body, _id: prodId })
       .then(() => {
-
         // Modify Message if update has partially failed because image was not modify on mimetype error
         const message = req.mimetypeError
-          ? "Objet modifié. Erreur: L'image n'as pas été modifiée. Veuillez ajouter une image dans le format correcte: png, jpg, jpeg."
+          ? "Objet modifié. Erreur: L'image n'a pas été modifiée. Veuillez ajouter une image dans le format correct: png, jpg, jpeg."
           : "Objet modifié.";
         res.status(200).json({ message: message });
       })

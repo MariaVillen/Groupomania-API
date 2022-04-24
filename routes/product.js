@@ -3,7 +3,7 @@ const express = require('express');
 
 const productController = require('../controllers/products');
 const isAuth = require('../middleware/is-auth');
-const multer = require('../middleware/multer-config');
+const multer = require('../middleware/multer-config.js');
 
 const router = express.Router();
 
