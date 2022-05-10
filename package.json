@@ -1,7 +1,7 @@
 {
-  "name": "p6-api",
+  "name": "p7-Groupomania",
   "version": "1.0.0",
-  "description": "P6 OpenClassrooms parcours dev web",
+  "description": "P7 OpenClassrooms parcours dev web",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -13,14 +13,12 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
-    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^6.3.0",
     "helmet": "^5.0.2",
     "jsonwebtoken": "^8.5.1",
-    "mongodb": "^4.4.1",
-    "mongoose": "^6.2.9",
-    "mongoose-unique-validator": "^3.0.0",
-    "multer": "^1.4.4"
+    "multer": "^1.4.4",
+    "mysql2": "^2.3.3",
+    "sequelize": "^6.19.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"

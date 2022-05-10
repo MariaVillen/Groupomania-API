@@ -1,14 +1,11 @@
 const express = require("express");
-
-const userController = require("../controllers/users");
-const limitRate = require("../middleware/limit-rate");
+const userController = require("../controllers/auth");
 
 const router = express.Router();
 
-// Sign up Route
-router.post("/signup", limitRate, userController.postSignup);
-
-// Login Route
-router.post("/login", limitRate, userController.postLogin);
+router.get("/", userController.getAllUsers);
+router.get("/:id", userController.getUserById);
+router.put("/:id", userController.updateUser);
+router.delete("/delete", userController.deleteUser);
 
 module.exports = router;

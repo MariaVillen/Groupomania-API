@@ -2,6 +2,9 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
+// Database
+const sequelize = require("./utils/database");
+
 const http = require("http");
 const app = require("./app");
 
@@ -61,4 +64,13 @@ server.on("listening", () => {
   console.log("Listening on " + bind);
 });
 
-server.listen(port);
+// Syncronize models of DB
+sequelize
+  .sync({ force: true })
+  .then((result) => {
+    console.log(result);
+    server.listen(port);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
