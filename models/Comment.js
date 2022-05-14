@@ -16,8 +16,8 @@ const Comments = sequelize.define("comments", {
   likes: {
     type: DataTypes.INTEGER.UNSIGNED,
     default: 0,
-  },
-});
+  }
+}, {paranoid: true});
 
 Comments.hasMany(Reports, { onDelete: "CASCADE" });
 Reports.belongsTo(Comments, { onDelete: "CASCADE" });

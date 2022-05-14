@@ -1,6 +1,7 @@
 const express = require("express");
+const authRole =  require('../middleware/is-auth');
 
-const authController = require("../controllers/users");
+const authController = require("../controllers/auth");
 //const limitRate = require("../middleware/limit-rate");
 
 const router = express.Router();
@@ -15,6 +16,6 @@ router.post("/login", authController.postLogin);
 
 // LogOut Route
 //router.post("/login", limitRate, userController.postLogin);
-router.post("/logout", authController.postLogout);
+router.post("/logout", authRole(['user', 'admin']), authController.postLogout);
 
 module.exports = router;

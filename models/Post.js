@@ -26,8 +26,8 @@ const Posts = sequelize.define("posts", {
   content: {
     type: Sequelize.INTEGER.UNSIGNED,
     default: 0,
-  },
-});
+  }
+},{paranoid: true});
 
 // un post can have a lot of comments but a comment belongs only to 1 post.
 Posts.hasMany(Comments, { onDelete: "CASCADE" });

@@ -12,16 +12,6 @@ const Users = sequelize.define("users", {
     allowNull: false,
     primaryKey: true,
   },
-  username: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      min: 3,
-      max: 30,
-      notEmpty: true, 
-    }
-  },
   lastName: {
     type: Sequelize.STRING,
     allowNull: false,
@@ -41,7 +31,7 @@ const Users = sequelize.define("users", {
     }
   },
   name: {
-    type: Sequelize.STRING,
+    type: Sequelize.STRING(100),
     allowNull: false,
     validate: {
       min: {
@@ -49,8 +39,8 @@ const Users = sequelize.define("users", {
         msg: 'Le prenom doit être au moins de 3 lettres.'
       },
       max:{
-        args: 50,
-        msg: 'Le prenom ne peut pas dépasser les 50 lettres.'
+        args: 100,
+        msg: 'Le prenom ne peut pas dépasser les 100 characters.'
       },
       is: {
         args: /^[a-zàâçéèêëîïôûùüÿñæœ .-]+$/i,
@@ -59,9 +49,9 @@ const Users = sequelize.define("users", {
     }
   },
   email: {
-    type: Sequelize.STRING,
+    type: Sequelize.STRING(100),
     allowNull: false,
-    validate: { min: 7, max: 50, 
+    validate: { min: 7, 
       isEmail: {
         args: true,
         msg: 'Le format doit être valide pour un email. Exemple: joedoe@mail.com'}
@@ -69,12 +59,9 @@ const Users = sequelize.define("users", {
     unique: true,
   },
   password: {
-    type: Sequelize.STRING,
+    type: Sequelize.STRING(64),
     allowNull: false,
-    validate: { 
-      min: 8, 
-      max: 255 
-    },
+    is: /^[0-9a-f]{64}$/i
   },
   profilePicture: {
     type: Sequelize.STRING,
@@ -94,20 +81,19 @@ const Users = sequelize.define("users", {
   },
   rol: {
     type: Sequelize.DataTypes.ENUM(
-      "utilisateur",
-      "moderateur",
-      "administrateur"
+      "user",
+      "admin"
     ),
     allowNull: false,
-    defaultValue: "utilisateur",
+    defaultValue: "user",
     validate: {
       isIn: {
-        args: [['utilisateur', 'moderateur', 'administrateur']],
-        msg: "Must be utilisateur, moderateur ou administrateur."
+        args: [['user', 'admin']],
+        msg: "Le role doit être admin ou user."
       }
     }
-  },
-});
+  }
+}, {paranoid: true}); // soft delete
 
 // Friends
 Users.belongsToMany(Users, {

@@ -6,7 +6,8 @@ const helmet = require("helmet");
 const userRoutes = require("./routes/user");
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/post");
-
+//const commentRoutes = require("./routes/comments");
+//const reportsRoutes = require("./routes/reports");
 // Create express instance
 const app = express();
 
@@ -42,6 +43,13 @@ app.use("/api/auth", authRoutes);
 
 // Post routes
 app.use("/api/posts", postRoutes);
+
+// Comments router
+//app.use("/api/comments", commentRoutes);
+
+// Reports router
+//app.use("/api/reports", reportsRoutes);
+
 
 // Images Fixed Route
 app.use("/images", express.static(path.join(__dirname, "images")));

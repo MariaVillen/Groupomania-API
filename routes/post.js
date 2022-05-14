@@ -1,15 +1,15 @@
 const express = require("express");
 const postController = require("../controllers/posts");
-
+const authRole = require("../middleware/is-auth");
 const router = express.Router();
 
-router.post('/add', postController.addPost); // User add a Sauce to the DB
-router.get('/', postController.getAllPosts); // User add a Sauce to the DB
-router.get("/:id", postController.getPostById);
-router.get("/:userId", postController.getPostByUserId);
-router.put('/:id', postController.updatePostById);
-router.post ('/:id/like', postController.postLikePost); // User make a like, dislike
-router.delete('/:id', postController.removePost);
+router.post('/add',  authRole(['user', 'admin']), postController.addPost); // User add a Sauce to the DB
+router.get('/', authRole(['user', 'admin']), postController.getAllPosts); // User add a Sauce to the DB
+router.get("/:id",authRole(['user', 'admin']), postController.getPostById);
+router.get("/:userId", authRole(['user', 'admin']), postController.getPostByUserId);
+router.put('/:id', authRole(['user', 'admin']), postController.updatePostById);
+router.post ('/:id/like', authRole(['user', 'admin']), postController.postLikePost); // User make a like, dislike
+router.delete('/:id', authRole(['user', 'admin']), postController.removePost);
 
 
 module.exports = router;

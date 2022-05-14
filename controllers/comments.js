@@ -16,9 +16,7 @@ exports.addComment = (req, res) => {
 
 //router.get('/', postController.getAllComments); // User add a Sauce to the DB
 exports.getAllComments = (req, res) => {
-  Posts.findAll({ include: [Users, Posts],  order: [
-    ['createdAt', 'DESC'],
-] })
+  Posts.findAll({ include: [Users, Posts], order: [["createdAt", "DESC"]] })
     .then((data) => {
       res.status(200).send(data);
     })
@@ -29,49 +27,49 @@ exports.getAllComments = (req, res) => {
 
 //router.get("/:id", postController.getCommentById);
 exports.getCommentById = (req, res) => {
- Comments.findOne({ where: {id: req.params.id} })
-.then((data) => {
-    res.status(200).send(data);
-})
-.catch((err) => {
-    res.status(401).send(err);
-}); 
-}
+  Comments.findOne({ where: { id: req.params.id } })
+    .then((data) => {
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      res.status(401).send(err);
+    });
+};
 
 //router.get('/:userId', postController.getCommentsByUserId); // User add a Sauce to the DB
 exports.getCommentByUserId = (req, res) => {
-Comment.findAll({ include: Users, where: {userId: req.params.id, order: [
-  ['createdAt', 'DESC'],
-] })
-  .then((data) => {
-    res.status(200).send(data);
+  Comments.findAll({
+    include: Users,
+    where: { userId: req.params.id },
+    order: ["createdAt", "DESC"],
   })
-  .catch((err) => {
-    res.status(401).send(err);
-  });
-}
+    .then((data) => {
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      res.status(401).send(err);
+    });
+};
 
 //router.get('/:postId', commentController.getCommentByPost);
 exports.getCommentByPost = (req, res) => {
-    Comment.findAll({ include: [Users, Posts], where: {postId: req.params.id}})
-        .then((data) => {
-          res.status(200).send(data);
-        })
-        .catch((err) => {
-          res.status(401).send(err);
-        });
-      }
-}
+  Comments.findAll({
+    include: [Users, Posts],
+    where: { postId: req.params.id },
+  })
+    .then((data) => {
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      res.status(401).send(err);
+    });
+};
 
 //router.put('/:id', postController.updateCommentById);
-exports.updateCommentById = (req, res) => {
-}
+exports.updateCommentById = (req, res) => {};
 
 //router.post ('/:id/like', postController.postLikeComment); // User make a like, dislike
-exports.postLikeComment = (req, res) => {}
+exports.postLikeComment = (req, res) => {};
 
 //router.delete('/:id', postController.removeComment);
-exports.removeComment = (req, res) => {}
-
-
-
+exports.removeComment = (req, res) => {};
