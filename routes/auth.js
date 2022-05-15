@@ -1,5 +1,7 @@
 const express = require("express");
 const authRole =  require('../middleware/is-auth');
+const limitRate = require("../middleware/limit-rate");
+
 
 const authController = require("../controllers/auth");
 //const limitRate = require("../middleware/limit-rate");
@@ -7,15 +9,15 @@ const authController = require("../controllers/auth");
 const router = express.Router();
 
 // Sign up Route
-//router.post("/signup", limitRate, userController.postSignup);
-router.post("/signup", authController.postSignUp);
+//http:/localhost:3000/api/signup
+router.post("/signup", limitRate, authController.postSignUp);
 
 // Login Route
-//router.post("/login", limitRate, userController.postLogin);
-router.post("/login", authController.postLogin);
+//http:/localhost:3000/api/login
+router.post("/login", limitRate, authController.postLogin);
 
-// LogOut Route
-//router.post("/login", limitRate, userController.postLogin);
+// Logout Route
+//http:/localhost:3000/api/logout
 router.post("/logout", authRole(['user', 'admin']), authController.postLogout);
 
 module.exports = router;

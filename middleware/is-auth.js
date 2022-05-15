@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const Users = require("../models/User");
 
 function authRole(role) {
   return async (req, res, next) => {
@@ -15,22 +15,28 @@ function authRole(role) {
       // Decode Token to extract userId
       const decodedToken = await jwt.verify(token, process.env.SECRET_TOKEN);
       const userId = decodedToken.userId;
-      const userRol = decodedToken.userRol;
-      const userData = await User.findByPk(userId);
+      const userData = await Users.findByPk(userId);
+      const userSentInBody = parseInt(req.body.userId);
+
 
       // User comparison to see if the user sent by the req.body and the user of the token are the same.
-      if (req.body.userId && req.body.userId !== userId) {
-        res.status(401).json({ message: "Erreur: User Id non valable" });
+      if (userSentInBody && userSentInBody !== userId) {
+        console.log( userSentInBody, ' ', userData, ' ', userId)
+        return res.status(401).json({ message: "Erreur: User Id non valable"});
       }
 
       // Test Rol
       if ([].concat(role).includes(userData.role)) {
+        req.userRole = userData.role;
+        req.userId= userData.idUsers;
+        console.log('paso la autenticacion');
         next();
       } else {
-        res.status(401).json({ message: "Erreur: forbidden access." });
+        console.log('forbiden access',  userData.role, role);
+        return res.status(401).json({ message: "Erreur: forbidden access.", role: userData.role });
       }
     } catch (err) {
-      res.status(401).json({ message: "Erreur: Requête non authentifiée" });
+      return res.status(401).json({ message: "Erreur: Requête non authentifiée" });
     }
   };
 }

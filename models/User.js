@@ -25,7 +25,7 @@ const Users = sequelize.define("users", {
         msg: 'Le nom ne peut pas dépasser les 50 lettres.'
       },
       is: {
-        args: /^[a-zàâçéèêëîïôûùüÿñæœ .-]+$/i,
+        args: /^([A-zàâçéèêëîïôûùüÿñæœ']+\s?)+\S/,
         msg: 'Seulement sont accesptés les lettres et le character -'},
       notEmpty: true
     }
@@ -43,8 +43,9 @@ const Users = sequelize.define("users", {
         msg: 'Le prenom ne peut pas dépasser les 100 characters.'
       },
       is: {
-        args: /^[a-zàâçéèêëîïôûùüÿñæœ .-]+$/i,
-        msg: 'Seulement sont accesptés les lettres et le character -'},
+        args: /^([A-zàâçéèêëîïôûùüÿñæœ']+\s?)+\S/,
+        msg: 'Seulement sont accesptés les lettres et le character -'
+        },
       notEmpty: true
     }
   },
@@ -56,7 +57,7 @@ const Users = sequelize.define("users", {
         args: true,
         msg: 'Le format doit être valide pour un email. Exemple: joedoe@mail.com'}
       },
-    unique: true,
+    unique: 'email',
   },
   password: {
     type: Sequelize.STRING(64),
@@ -79,7 +80,7 @@ const Users = sequelize.define("users", {
     type: Sequelize.TINYINT,
     defaultValue: false,
   },
-  rol: {
+  role: {
     type: Sequelize.DataTypes.ENUM(
       "user",
       "admin"
