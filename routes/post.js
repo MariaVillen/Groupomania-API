@@ -6,7 +6,7 @@ const router = express.Router();
 router.post('/add',  authRole(['user', 'admin']), postController.addPost); // User add a Sauce to the DB
 router.get('/', authRole(['user', 'admin']), postController.getAllPosts); // User add a Sauce to the DB
 router.get("/:id",authRole(['user', 'admin']), postController.getPostById);
-router.get("/:userId", authRole(['user', 'admin']), postController.getPostByUserId);
+router.get("/user/:id", authRole(['user', 'admin']), postController.getPostByUserId);
 router.put('/:id', authRole(['user', 'admin']), postController.updatePostById);
 router.post ('/:id/like', authRole(['user', 'admin']), postController.postLikePost); // User make a like, dislike
 router.delete('/:id', authRole(['user', 'admin']), postController.removePost);

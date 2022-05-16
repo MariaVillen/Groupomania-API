@@ -1,7 +1,10 @@
 const jwt = require("jsonwebtoken");
 const Users = require("../models/User");
 
-function authRole(role) {
+
+// Needs req.body.requestingUserId!
+
+function authRole(roleAllowed) {
   return async (req, res, next) => {
     try {
       // Verify if is there is a token
@@ -15,28 +18,28 @@ function authRole(role) {
       // Decode Token to extract userId
       const decodedToken = await jwt.verify(token, process.env.SECRET_TOKEN);
       const userId = decodedToken.userId;
-      const userData = await Users.findByPk(userId);
-      const userSentInBody = parseInt(req.body.userId);
+      const userRole = decodedToken.userRole;
+      const requestingUserId = parseInt(req.body.requestingUserId);
+      
+      // Data of authenticated user
+      //const userData = await Users.findByPk(userId);
 
 
       // User comparison to see if the user sent by the req.body and the user of the token are the same.
-      if (userSentInBody && userSentInBody !== userId) {
-        console.log( userSentInBody, ' ', userData, ' ', userId)
-        return res.status(401).json({ message: "Erreur: User Id non valable"});
+      if (requestingUserId && requestingUserId !== userId) {ç
+        return res.status(401).json({ error: "User id non valable"});
       }
 
       // Test Rol
-      if ([].concat(role).includes(userData.role)) {
+      if ([].concat(roleAllowed).includes(/*userData.role*/ userRole)) {
         req.userRole = userData.role;
         req.userId= userData.idUsers;
-        console.log('paso la autenticacion');
         next();
       } else {
-        console.log('forbiden access',  userData.role, role);
-        return res.status(401).json({ message: "Erreur: forbidden access.", role: userData.role });
+        return res.status(401).json({ error: "Accès interdit pour " + userData.role });
       }
     } catch (err) {
-      return res.status(401).json({ message: "Erreur: Requête non authentifiée" });
+      return res.status(401).json({ error: "Requête non authentifiée" });
     }
   };
 }

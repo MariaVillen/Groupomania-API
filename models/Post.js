@@ -22,10 +22,6 @@ const Posts = sequelize.define("posts", {
   likes: {
     type: Sequelize.INTEGER.UNSIGNED,
     default: 0,
-  },
-  content: {
-    type: Sequelize.INTEGER.UNSIGNED,
-    default: 0,
   }
 },{paranoid: true});
 
