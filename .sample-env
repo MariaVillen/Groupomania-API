@@ -1,10 +1,8 @@
-MONGO_USER = "myDBUser"
-MONGO_PASSWORD = "motDePass"
-MONGO_DEFAULT_DATABASE = "nomDeMonDB"
-SECRET_TOKEN = "yourSecretToken"
-ORIGINS_ALLOWED = '["http://127.0.0.1:4200","http://localhost:4200","http://127.0.0.1:8081","http://localhost:8081","http://127.0.0.1:8081","http://localhost:8081"]'
-
-
-
-
+DB_USER = ""
+DB_PASSWORD = ""
+DEFAULT_DATABASE = ""
+HOST = "localhost"
+ACCESS_TOKEN_SECRET = ""
+REFRESH_TOKEN_SECRET= ""
+ORIGINS_ALLOWED = '["http://127.0.0.1:3000","http://localhost:3000","http://127.0.0.1:3001","http://localhost:3001","http://127.0.0.1:3002","http://localhost:3002"]'
 

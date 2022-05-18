@@ -3,20 +3,26 @@ const Users = require("../models/User");
 const Comments = require("../models/Comment");
 const Reports = require(".../models/Report");
 
-//router.get("/", reportController.getAllReports);
+// Get all the reports
+// [GET] http://localhost:3000/reports
 exports.getAllReports = (req, res) => {};
 
-//router.get("/:id", reportController.getReportById);
+// Get one report by id
+// [GET] http://localhost:3000/reports/:id
 exports.getReportById = (req, res) => {};
 
-//router.put("/:id", reportController.updateReport);
+// Change the state of a report
+// [PUT] http://localhost:3000/reports/:id
 exports.updateReport = (req, res) => {};
 
-//router.delete("/delete", reportController.deleteReport);
+// Remove a post by Id
+// [DELETE] http://localhost:3000/reports/:id
 exports.deleteReport = (req, res) => {};
 
-//router.post("/post/:postId", reportController.addReportOnPost);
+// Create a report for a post with the post id
+// [POST] http://localhost:3000/api/reports/post/:id
 exports.addReportOnPost = (req, res) => {};
 
-//router.post("/comment/:commentId", reportController.addReportOnComment);
+// Create a report for a comment with the comment id
+// [POST] http://localhost:3000/api/reports/comments/:id
 exports.addReportOnComment = (req, res) => {};

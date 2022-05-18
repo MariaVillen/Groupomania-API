@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 const Users = require("../models/User");
 
-
 // Needs req.body.requestingUserId!
 
 function authRole(roleAllowed) {
+  console.log("entra");
   return async (req, res, next) => {
     try {
       // Verify if is there is a token
@@ -16,27 +16,32 @@ function authRole(roleAllowed) {
       }
 
       // Decode Token to extract userId
-      const decodedToken = await jwt.verify(token, process.env.SECRET_TOKEN);
+      const decodedToken = await jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET
+      );
       const userId = decodedToken.userId;
       const userRole = decodedToken.userRole;
       const requestingUserId = parseInt(req.body.requestingUserId);
-      
+
       // Data of authenticated user
       //const userData = await Users.findByPk(userId);
 
-
       // User comparison to see if the user sent by the req.body and the user of the token are the same.
-      if (requestingUserId && requestingUserId !== userId) {ç
-        return res.status(401).json({ error: "User id non valable"});
+      if (requestingUserId && requestingUserId !== userId) {
+        ç;
+        return res.status(401).json({ error: "User id non valable" });
       }
 
       // Test Rol
       if ([].concat(roleAllowed).includes(/*userData.role*/ userRole)) {
         req.userRole = userData.role;
-        req.userId= userData.idUsers;
+        req.userId = userData.idUsers;
         next();
       } else {
-        return res.status(401).json({ error: "Accès interdit pour " + userData.role });
+        return res
+          .status(401)
+          .json({ error: "Accès interdit pour " + userData.role });
       }
     } catch (err) {
       return res.status(401).json({ error: "Requête non authentifiée" });

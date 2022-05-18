@@ -71,7 +71,9 @@ exports.postLikeSauce = (req, res, next) => {
       )
         .then((state) => {
           if (!state) {
-            throw new Error("Impossible d'exécuter l'action demandée: L'utilisateur a déjà réagi sur ce produit ou la sauce n'existe pas");
+            throw new Error(
+              "Impossible d'exécuter l'action demandée: L'utilisateur a déjà réagi sur ce produit ou la sauce n'existe pas"
+            );
           }
           res.status(201).json({ message: "Dislike ajouté" });
         })
@@ -123,7 +125,9 @@ exports.postLikeSauce = (req, res, next) => {
       )
         .then((state) => {
           if (!state) {
-            throw new Error("Impossible d'exécuter l'action demandée: L'utilisateur a déjà réagi sur ce produit ou la sauce n'existe pas.");
+            throw new Error(
+              "Impossible d'exécuter l'action demandée: L'utilisateur a déjà réagi sur ce produit ou la sauce n'existe pas."
+            );
           }
           res.status(201).json({ message: "Like ajouté" });
         })

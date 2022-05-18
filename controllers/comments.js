@@ -4,7 +4,7 @@ const Comments = require("../models/Comment");
 
 
 
-//router.post('/add', postController.addComment); // User add a Sauce to the DB
+// router.post('/add', postController.addComment); // User add a Sauce to the DB
 // [POST] http://localhost:3000/comments/add
 // Body: {idUser: idOfRequesterUser, comment: { content, postId, userId}}
 exports.addComment = (req, res) => {

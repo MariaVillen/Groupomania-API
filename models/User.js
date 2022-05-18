@@ -5,96 +5,103 @@ const Posts = require("./Post");
 const Reports = require("./Report");
 const Comments = require("./Comment");
 
-const Users = sequelize.define("users", {
-  idUsers: {
-    type: Sequelize.INTEGER.UNSIGNED,
-    autoIncrement: true,
-    allowNull: false,
-    primaryKey: true,
-  },
-  lastName: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    validate: {
-      min: {
-        args: 3,
-        msg: 'Le nom doit être au moins de 3 lettres.'
-      },
-      max:{
-        args: 50,
-        msg: 'Le nom ne peut pas dépasser les 50 lettres.'
-      },
-      is: {
-        args: /^([A-zàâçéèêëîïôûùüÿñæœ']+\s?)+\S/,
-        msg: 'Seulement sont accesptés les lettres et le character -'},
-      notEmpty: true
-    }
-  },
-  name: {
-    type: Sequelize.STRING(100),
-    allowNull: false,
-    validate: {
-      min: {
-        args: 3,
-        msg: 'Le prenom doit être au moins de 3 lettres.'
-      },
-      max:{
-        args: 100,
-        msg: 'Le prenom ne peut pas dépasser les 100 characters.'
-      },
-      is: {
-        args: /^([A-zàâçéèêëîïôûùüÿñæœ']+\s?)+\S/,
-        msg: 'Seulement sont accesptés les lettres et le character -'
+const Users = sequelize.define(
+  "users",
+  {
+    idUsers: {
+      type: Sequelize.INTEGER.UNSIGNED,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true,
+    },
+    lastName: {
+      type: Sequelize.STRING,
+      allowNull: false,
+      validate: {
+        min: {
+          args: 3,
+          msg: "Le nom doit être au moins de 3 lettres.",
         },
-      notEmpty: true
-    }
-  },
-  email: {
-    type: Sequelize.STRING(100),
-    allowNull: false,
-    validate: { min: 7, 
-      isEmail: {
-        args: true,
-        msg: 'Le format doit être valide pour un email. Exemple: joedoe@mail.com'}
+        max: {
+          args: 50,
+          msg: "Le nom ne peut pas dépasser les 50 lettres.",
+        },
+        is: {
+          args: /^([A-zàâçéèêëîïôûùüÿñæœ']+\s?)+\S/,
+          msg: "Seulement sont accesptés les lettres et le character -",
+        },
+        notEmpty: true,
       },
-    unique: 'email',
+    },
+    name: {
+      type: Sequelize.STRING(100),
+      allowNull: false,
+      validate: {
+        min: {
+          args: 3,
+          msg: "Le prenom doit être au moins de 3 lettres.",
+        },
+        max: {
+          args: 100,
+          msg: "Le prenom ne peut pas dépasser les 100 characters.",
+        },
+        is: {
+          args: /^([A-zàâçéèêëîïôûùüÿñæœ']+\s?)+\S/,
+          msg: "Seulement sont accesptés les lettres et le character -",
+        },
+        notEmpty: true,
+      },
+    },
+    email: {
+      type: Sequelize.STRING(100),
+      allowNull: false,
+      validate: {
+        min: 7,
+        isEmail: {
+          args: true,
+          msg: "Le format doit être valide pour un email. Exemple: joedoe@mail.com",
+        },
+      },
+      unique: "email",
+    },
+    password: {
+      type: Sequelize.STRING(64),
+      allowNull: false,
+      is: /^[0-9a-f]{64}$/i,
+    },
+    profilePicture: {
+      type: Sequelize.STRING,
+      defaultValue: "",
+    },
+    coverPicture: {
+      type: Sequelize.STRING,
+      defaultValue: "",
+    },
+    bio: {
+      type: Sequelize.TEXT,
+      defaultValue: "",
+    },
+    isActive: {
+      type: Sequelize.TINYINT,
+      defaultValue: false,
+    },
+    role: {
+      type: Sequelize.DataTypes.ENUM("user", "admin"),
+      allowNull: false,
+      defaultValue: "user",
+      validate: {
+        isIn: {
+          args: [["user", "admin"]],
+          msg: "Le role doit être admin ou user.",
+        },
+      },
+    },
+    refreshToken: {
+      type: Sequelize.STRING,
+    },
   },
-  password: {
-    type: Sequelize.STRING(64),
-    allowNull: false,
-    is: /^[0-9a-f]{64}$/i
-  },
-  profilePicture: {
-    type: Sequelize.STRING,
-    defaultValue: "",
-  },
-  coverPicture: {
-    type: Sequelize.STRING,
-    defaultValue: "",
-  },
-  bio: {
-    type: Sequelize.TEXT,
-    defaultValue: "",
-  },
-  isActive: {
-    type: Sequelize.TINYINT,
-    defaultValue: false,
-  },
-  role: {
-    type: Sequelize.DataTypes.ENUM(
-      "user",
-      "admin"
-    ),
-    allowNull: false,
-    defaultValue: "user",
-    validate: {
-      isIn: {
-        args: [['user', 'admin']],
-        msg: "Le role doit être admin ou user."
-      }
-    }
-  }
-}, {paranoid: true}); // soft delete
+  { paranoid: true }
+); // soft delete
 
 // Friends
 Users.belongsToMany(Users, {

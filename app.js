@@ -1,4 +1,5 @@
 const path = require("path");
+const cookieParser = require('cookie-parser');
 const express = require("express");
 
 const helmet = require("helmet");
@@ -8,6 +9,8 @@ const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/post");
 //const commentRoutes = require("./routes/comments");
 //const reportsRoutes = require("./routes/reports");
+const refreshRoutes = require("./routes/refresh");
+
 // Create express instance
 const app = express();
 
@@ -19,12 +22,13 @@ app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // CORS authorisation
 app.use((req, res, next) => {
-  // const origin = req.headers.origin;
-  // if (process.env.ORIGINS_ALLOWED.includes(origin)) {
-  //   res.setHeader("Access-Control-Allow-Origin", origin);
-  // }
+  const origin = req.headers.origin;
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  if (process.env.ORIGINS_ALLOWED.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Credentials", true); // for cookies
+  }
+  //res.setHeader("Access-Control-Allow-Origin", "*");
   res.header(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
@@ -37,16 +41,18 @@ app.use((req, res, next) => {
   return next();
 });
 
-// User authentication
-app.use("/api/users", userRoutes);
-app.use("/api/auth", authRoutes);
+// Cookie Middleware
+app.use(cookieParser());
 
+
+// User authentication
+app.use("/api/auth", authRoutes);
+// Refresh 
+app.use("/refresh", refreshRoutes);
 // Post routes
 app.use("/api/posts", postRoutes);
-
 // Comments router
 //app.use("/api/comments", commentRoutes);
-
 // Reports router
 //app.use("/api/reports", reportsRoutes);
 

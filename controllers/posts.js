@@ -1,18 +1,17 @@
 const Posts = require("../models/Post");
 const Users = require("../models/User");
 
-
 // Add a post
 // [POST] http://localhost:3000/api/posts/add
 // Body Content Expected: {requestingUserId, post: {attachement?, content?, userId}} | {req.file}
 exports.addPost = (req, res) => {
-
-  let sentImageUrl; 
+  let sentImageUrl;
 
   if (req.file) {
     // Getting file name
     sentImageUrl = `${req.protocol}://${req.get("host")}/images/${
-    req.file.filename}`;
+      req.file.filename
+    }`;
     // If the image sauce is not of the correct mimetype return error.
     if (req.mimetypeError) {
       return res.status(400).json({
@@ -21,17 +20,17 @@ exports.addPost = (req, res) => {
       });
     }
   }
- 
+
   Posts.create({
     attachement: sentImageUrl,
     content: req.body.post.content,
-    userIdUsers: req.body.post.userId
+    userIdUsers: req.body.post.userId,
   })
     .then(() => {
-      res.status(200).json ( {message: "Publication ajoutée!"});
+      res.status(200).json({ message: "Publication ajoutée!" });
     })
     .catch((err) => {
-      res.status(400).json({error: err.message});
+      res.status(400).json({ error: err.message });
     });
 };
 
@@ -43,18 +42,17 @@ exports.getAllPosts = (req, res) => {
       res.status(200).json(data);
     })
     .catch((err) => {
-      res.status(401).json({error: err.message});
+      res.status(401).json({ error: err.message });
     });
 };
 
 // Get Posts By Id
 // [GET] http://localhost:3000/api/posts/:id
 exports.getPostById = (req, res) => {
-
   const postToGet = req.params.id;
   // Verify if the user id exists in the params of the GET request.
-   if (!postToGet) {
-    return res.status(400).json({error: "Indiquez l'id de l'utilisateur"})
+  if (!postToGet) {
+    return res.status(400).json({ error: "Indiquez l'id de l'utilisateur" });
   }
 
   Posts.findOne({ where: { id: postToGet } })
@@ -62,18 +60,17 @@ exports.getPostById = (req, res) => {
       res.status(200).json(data);
     })
     .catch((err) => {
-      res.status(401).json({error: err.message});
+      res.status(401).json({ error: err.message });
     });
 };
 
 // Get Post from a single user
 // [GET] http://localhost:3000/api/posts/user/:id
 exports.getPostByUserId = (req, res) => {
-
   const userOwner = req.params.id;
   // Verify if the user id exists in the params of the GET request.
-   if (!userOwner) {
-    return res.status(400).json({error: "Indiquez l'id de l'utilisateur"})
+  if (!userOwner) {
+    return res.status(400).json({ error: "Indiquez l'id de l'utilisateur" });
   }
 
   Posts.findAll({
@@ -85,7 +82,7 @@ exports.getPostByUserId = (req, res) => {
       res.status(200).json(data);
     })
     .catch((err) => {
-      res.status(401).json({error: err.message});
+      res.status(401).json({ error: err.message });
     });
 };
 
@@ -93,13 +90,14 @@ exports.getPostByUserId = (req, res) => {
 
 // Update a single Post by Id
 // [PUT] http://localhost:3000/api/posts/:id
-exports.updatePostById = (req, res) => {};
+exports.updatePostById = (req, res) => {
+  const postToUpdate = req.params.id;
+};
 
-
-//router.post ('/:id/like', postController.postLikePost); // User make a like, dislike
+// Like / dislike handler
+// [POST] http://localhost:3000/api/posts/:id/like
 exports.postLikePost = (req, res) => {};
 
-
-
-//router.delete('/:id', postController.removePost);
+// Delete a post by id
+// [DELETE] http://localhost:3000/api/posts/:id
 exports.removePost = (req, res) => {};
