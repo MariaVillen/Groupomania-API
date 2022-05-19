@@ -1,14 +1,16 @@
 const express = require("express");
-const authRole = require("../middleware/is-auth");
+const isAuth = require("../middleware/is-auth");
+const verifyRoles =  require('../middleware/verify-roles');
 const reportController = require("../controllers/auth");
+const ROLES_LIST = require('../utils/roles_list');
 
 const router = express.Router();
 
-router.get("/", authRole(['admin']), reportController.getAllReports);
-router.get("/:id", authRole(['admin']), reportController.getReportById);
-router.put("/:id", authRole(['admin']), reportController.updateReport);
-router.delete("/:id", authRole(['admin']), reportController.deleteReport);
-router.post("/post/:id", authRole(['user', 'admin']), reportController.addReportOnPost);
-router.post("/comment/:id", authRole(['user', 'admin']), reportController.addReportOnComment);
+router.get("/", isAuth, authRole([ROLES_LIST.admin]), reportController.getAllReports);
+router.get("/:id", isAuth, authRole([ROLES_LIST.admin]), reportController.getReportById);
+router.put("/:id", isAuth, authRole([ROLES_LIST.admin]), reportController.updateReport);
+router.delete("/:id", isAuth, authRole([ROLES_LIST.admin]), reportController.deleteReport);
+router.post("/post/:id", isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), reportController.addReportOnPost);
+router.post("/comment/:id", isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), reportController.addReportOnComment);
 
 module.exports = router;

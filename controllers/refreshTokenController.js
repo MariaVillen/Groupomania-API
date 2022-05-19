@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
+const ROLES_LIST = require('../utils/roles_list');
 
-// Needs req.body.requestingUserId!
 
 exports.refreshTokenHandler = async (req, res) => {
   const cookies = req.cookies;
@@ -17,7 +17,11 @@ exports.refreshTokenHandler = async (req, res) => {
       if (err || foundUser.idUsers !== decodedToken.userId)
         return res.sendStatus(403);
       const accessToken = jwt.sign(
-        { userId: decodedToken.userId },
+        { "UsernameInfo": {
+            userId: decodedToken.userId,
+            userRole: ROLES_LIST[foundUser.role]
+          }
+        },
         process.env.ACCESS_TOKEN_SECRET,
         { expires: "15m" }
       );

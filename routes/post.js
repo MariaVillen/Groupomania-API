@@ -1,15 +1,18 @@
 const express = require("express");
 const postController = require("../controllers/posts");
-const authRole = require("../middleware/is-auth");
+const isAuth = require("../middleware/is-auth");
+const verifyRoles =  require('../middleware/verify-roles');
+const ROLES_LIST = require('../utils/roles_list');
+
 const router = express.Router();
 
-router.post('/add',  authRole(['user', 'admin']), postController.addPost); // User add a Sauce to the DB
-router.get('/', authRole(['user', 'admin']), postController.getAllPosts); // User add a Sauce to the DB
-router.get("/:id",authRole(['user', 'admin']), postController.getPostById);
-router.get("/user/:id", authRole(['user', 'admin']), postController.getPostByUserId);
-router.put('/:id', authRole(['user', 'admin']), postController.updatePostById);
-router.post ('/:id/like', authRole(['user', 'admin']), postController.postLikePost); // User make a like, dislike
-router.delete('/:id', authRole(['user', 'admin']), postController.removePost);
+router.post('/add', isAuth,  verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.addPost); // User add a Sauce to the DB
+router.get('/', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getAllPosts); // User add a Sauce to the DB
+router.get("/:id",isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getPostById);
+router.get("/user/:id", isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getPostByUserId);
+router.put('/:id', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.updatePostById);
+router.post ('/:id/like', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.postLikePost); // User make a like, dislike
+router.delete('/:id', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.removePost);
 
 
 module.exports = router;

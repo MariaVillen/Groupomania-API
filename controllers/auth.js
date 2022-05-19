@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { validation } = require("../helpers/validation");
 const Users = require("../models/User");
+const ROLES_LIST = require("../utils/roles_list");
 
 // Sign Up new user
 // [POST] http:/localhost:3000/signup
@@ -31,7 +32,7 @@ exports.postSignUp = async (req, res) => {
 
   // Hashing password and creating user
   try {
-    const hashedPass = await bycrypt.hash(password, 12);
+    const hashedPass = await bcrypt.hash(password, 12);
     const newUser = await Users.create({
       email: email,
       password: hashedPass,
@@ -71,11 +72,11 @@ exports.postLogin = async (req, res) => {
     if (!foundUser) {
       return res.status(401).json({ error: "Utilisateur non trouvé." });
     }
-
-    if (!foundUser.isActive) {
-      return res
-        .status(403)
-        .json({ error: "Le compte de l'utilisateur n'est pas actif." });
+    console.log(foundUser.isActive !== 1);
+    if (foundUser.isActive !== 1) {
+      console.log('pasa por aqui');
+      return res.status(403).json({ error: "Le compte de l'utilisateur n'est pas actif." });
+      console.log('que paso');
     }
 
     // User Found
@@ -87,13 +88,16 @@ exports.postLogin = async (req, res) => {
       // Valid Password
 
       const accessToken = jwt.sign(
-        { userId: foundUser.idUsers, userRole: foundUser.role },
+        { "UserInfo": {
+          userId: foundUser.idUsers, userRole: ROLES_LIST[foundUser.role] // sends the code, not the name of role
+        }
+        },
         process.env.ACCESS_TOKEN_SECRET,
         { expiresIn: "15m" }
       );
 
       const refreshToken = jwt.sign(
-        { userId: foundUser.idUsers, userRole: foundUser.role },
+        { userId: foundUser.idUsers },
         process.env.REFRESH_TOKEN_SECRET,
         { expiresIn: "1d" }
       );
