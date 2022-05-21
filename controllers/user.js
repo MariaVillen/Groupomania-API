@@ -1,21 +1,22 @@
 const Users = require("../models/User");
 const { Op } = require("sequelize");
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { validation } = require("../helpers/validation");
+const ROLES_LIST = require("../utils/roles_list");
+
 
 // Get all user from list. Information returned will depends on role.
 // [GET] http://localhost:3000/user
 exports.getAllUsers = (req, res) => {
-  const roleOfRequestingUser = req.userRole;
-  const idOfRequestingUser = req.userId;
+  const roleOfRequestingUser = req.role;
+  //const idOfRequestingUser = req.userId;
 
   // ADMIN OWNER PERMISSION ONLY: Visible content only for admins.
+  if (roleOfRequestingUser === ROLES_LIST.admin) {
 
-  if (roleOfRequestingUser === "admin") {
     Users.findAll({
       attributes: {
-        exclude: ["password"],
+        exclude: ["password, refreshToken"],
       },
       order: [["createdAt", "DESC"]],
     })
@@ -30,15 +31,16 @@ exports.getAllUsers = (req, res) => {
 
     Users.findAll({
       attributes: {
-        exclude: ["password", "email", "deleteAt"],
+        exclude: ["password", "email","refreshToken","deleteAt"],
       },
-      order: [["createdAt", "DESC"]],
-      where: {
+      order: [["createdAt", "DESC"]]
+     /* where: {
         isActive: 1,
-        idUsers: { [Op.not]: idOfRequestingUser },
-      },
+        /*idUsers: { [Op.not]: idOfRequestingUser },
+      }*/
     })
       .then((data) => {
+        console.log(data);
         res.status(200).json(data);
       })
       .catch((err) => {
@@ -51,7 +53,7 @@ exports.getAllUsers = (req, res) => {
 // [GET] http://localhost:3000/user/:id
 exports.getUserById = (req, res) => {
   const userToGet = parseInt(req.params.id);
-  const roleOfRequestingUser = req.userRole;
+  const roleOfRequestingUser = req.role;
   const idOfRequestingUser = req.userId;
 
   // Verify if the user id exists in the params of the GET request.
@@ -71,7 +73,7 @@ exports.getUserById = (req, res) => {
       });
   } else {
     let excludedInfo;
-    if (roleOfRequestingUser === "admin") {
+    if (roleOfRequestingUser === ROLES_LIST.admin) {
       // ADMIN PERMISSION: if the requesting user is admin
       excludedInfo = ["password"];
     } else {
@@ -97,7 +99,7 @@ exports.getUserById = (req, res) => {
 // Body Content Expected: {requestingUserId, user: {name?, lastName?, email?, password?, cover?, avatar?, state?, role?, bio? }}
 exports.updateUser = (req, res) => {
   // Requester data
-  const roleOfRequestingUser = req.userRole;
+  const roleOfRequestingUser = req.role;
   const idOfRequestingUser = req.userId;
 
   // Confirm if userId exists
@@ -114,7 +116,7 @@ exports.updateUser = (req, res) => {
     user
   ) => {
     // FORBIDEN: Not possible to modify un user admin.
-    if (user.role === "admin" && user.idUsers !== idOfRequestingUser) {
+    if (user.role === ROLES_LIST.admin && user.idUsers !== idOfRequestingUser) {
       return req
         .status(401)
         .json({
@@ -123,7 +125,7 @@ exports.updateUser = (req, res) => {
     }
 
     // ADMIN PERMISSION: admin can modify users except the password.
-    else if (roleOfRequestingUser === "admin" && user.role === "user") {
+    else if (roleOfRequestingUser === ROLES_LIST.admin && user.role === "user") {
       try {
         return {
           lastName: validation.isName(req.body.user.lastName),
@@ -140,7 +142,7 @@ exports.updateUser = (req, res) => {
 
     // OWNER USER PERMISSION: owner user can modifiy restricted info.
     else if (
-      roleOfRequestingUser === "user" &&
+      roleOfRequestingUser === ROLES_LIST.user &&
       idOfRequestingUser === user.idUsers
     ) {
       console.log("por ahora bien");
@@ -245,11 +247,11 @@ exports.deleteUser = (req, res) => {
     return res.status(400).json({ error: "Indiquez l'id de l'utilisateur" });
   }
 
-  const roleOfRequestingUser = req.userRole;
+  const roleOfRequestingUser = req.role;
   const idOfRequestingUser = req.userIdReq;
 
   // ADMIN OR USER OWNER PERMISSION ONLY.
-  if (roleOfRequestingUser === "admin" || idOfRequestingUser === userToDelte) {
+  if (roleOfRequestingUser === ROLES_LIST.admin || idOfRequestingUser === userToDelte) {
     Users.destroy({
       where: {
         idUsers: userToDelete,

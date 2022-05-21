@@ -16,7 +16,7 @@ exports.postSignUp = async (req, res) => {
   if (!email || !password || !lastName || !name) {
     return res
       .status(400)
-      .json({ error: "Veuillez remplir l'ensemble des champs du formulaire." });
+      .json({ 'error': "Veuillez remplir l'ensemble des champs du formulaire." });
   }
 
   // Champs validation
@@ -27,7 +27,7 @@ exports.postSignUp = async (req, res) => {
     name = validation.isName(name);
   } catch (err) {
     console.log(err);
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ 'error': err.message });
   }
 
   // Hashing password and creating user
@@ -44,8 +44,7 @@ exports.postSignUp = async (req, res) => {
       message: `Nouvel utilisateur ${newUser.name} ${newUser.lastName} créé.`,
     });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ 'error': err.message });
   }
 };
 
@@ -70,23 +69,21 @@ exports.postLogin = async (req, res) => {
     });
 
     if (!foundUser) {
-      return res.status(401).json({ error: "Utilisateur non trouvé." });
+      return res.status(401).json({ 'error': "Utilisateur non trouvé." });
     }
     console.log(foundUser.isActive !== 1);
     if (foundUser.isActive !== 1) {
       console.log('pasa por aqui');
-      return res.status(403).json({ error: "Le compte de l'utilisateur n'est pas actif." });
-      console.log('que paso');
+      return res.status(403).json({ 'error': "Le compte de l'utilisateur n'est pas actif." });
     }
 
     // User Found
     const validPass = await bcrypt.compare(password, foundUser.password);
 
     if (!validPass) {
-      return res.status(401).json({ error: "Mot the passe incorrecte." });
+      return res.status(401).json({ 'error': "Mot the passe incorrecte." });
     } else {
       // Valid Password
-
       const accessToken = jwt.sign(
         { "UserInfo": {
           userId: foundUser.idUsers, userRole: ROLES_LIST[foundUser.role] // sends the code, not the name of role
@@ -106,7 +103,7 @@ exports.postLogin = async (req, res) => {
       const result = await Users.update(
         { refreshToken: refreshToken },
         {
-          where: { idUsers: foundUser },
+          where: { idUsers: foundUser.idUsers },
         }
       );
 
@@ -121,13 +118,13 @@ exports.postLogin = async (req, res) => {
 
         res.status(200).json({
           userId: foundUser.idUsers,
-          userRole: foundUser.role,
+          userRole: ROLES_LIST[foundUser.role],
           accessToken: accessToken,
         });
       }
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ 'error': err.message });
   }
 };
 
@@ -138,10 +135,9 @@ exports.postLogout = async (req, res) => {
 
   const cookies = req.cookies;
   if (!cookies?.jwt) return res.status(204); // success no content to send back
-  const refreshToken = cookies.jwt;
   try {
     // Is refresh token in Db?
-    const foundUser = await Users.findOne({ where: { token: cookies.jwt } });
+    const foundUser = await Users.findOne({ where: { refreshToken: cookies.jwt } });
     if (!foundUser) {
       res.clearCookie("jwt", {
         httpOnly: true,
@@ -154,8 +150,7 @@ exports.postLogout = async (req, res) => {
     const result = await foundUser.update({ refreshToken: "" });
     res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
     return res.sendStatus(204); //forbidden
-    res.sendStatus(204);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ 'error': err.message });
   }
 };

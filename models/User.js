@@ -98,6 +98,7 @@ const Users = sequelize.define(
     },
     refreshToken: {
       type: Sequelize.STRING,
+      defaultValue: ''
     },
   },
   { paranoid: true }

@@ -1,10 +1,10 @@
-const verifyRoles = (...allowedRoles) => {
+const verifyRoles = (allowedRoles) => {
     return (req, res, next) => {
-        if (!req?.roles || !req?.isActive) return res.sendStatus(403); //unhautorized
-        const rolesArray = [...allowedRoles];
+        console.log(req.role);
+        if (!req?.role) return res.status(403).json({'error': 'No role passed'}); //unhautorized
         // verify at least one valid role exists
-        const result = req.roles.map(role => rolesArray.includes(role)).find(val => vale===true);
-        if (!result) return res.sendStatus(401);
+        const result = allowedRoles.includes(req.role);
+        if (!result) return res.status(401).json({'error': 'No role authorized'});// no roles forbidden.
         next();
     }
 }

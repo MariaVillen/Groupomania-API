@@ -14,13 +14,13 @@ exports.validation = (() => {
 
   const cleanWhiteSpace = (str) => {
     const reg = /\s{2,}/;
-    const newstr = str.replace(reg, " ");
+    const newstr = str.replace(reg, " ").trim();
     return newstr;
   };
 
   return {
     isEmail: (str) => {
-      const sanitizedStr = cleanWhiteSpace(str.trim().toLowerCase());
+      const sanitizedStr = cleanWhiteSpace(str.toLowerCase());
       const isValid = isEmail.test(sanitizedStr);
       if (isValid) {
         return sanitizedStr;
@@ -38,7 +38,6 @@ exports.validation = (() => {
     },
     isName: (str) => {
       const sanitizedStr = cleanWhiteSpace(str);
-      console.log(sanitizedStr, sanitizedStr.match(isName)[0]);
       const isValid = sanitizedStr.match(isName)[0] === sanitizedStr;
       if (isValid) {
         return sanitizedStr;
