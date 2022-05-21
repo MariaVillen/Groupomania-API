@@ -50,6 +50,8 @@ app.use("/api/auth", authRoutes);
 // Refresh 
 app.use("/refresh", refreshRoutes);
 // Post routes
+app.use("/api/user", userRoutes);
+// Post routes
 app.use("/api/posts", postRoutes);
 // Comments router
 //app.use("/api/comments", commentRoutes);
