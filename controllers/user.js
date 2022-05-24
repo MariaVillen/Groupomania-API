@@ -23,6 +23,7 @@ exports.getAllUsers = (req, res) => {
       order: [["createdAt", "DESC"]],
     })
       .then((data) => {
+        console.log(data);
         res.status(200).json(data);
       })
       .catch((err) => {
@@ -278,48 +279,4 @@ exports.deleteUser = (req, res) => {
   }
 };
 
-//router.put("/:id", userController.updateUser);
-/*
-  const prodId = req.params.id;
 
-  if (req.file) {
-    Sauce.findById(prodId)
-      .then((sauce) => {
-        const filename = sauce.imageUrl.split("/images/")[1];
-        const sentImageUrl = `${req.protocol}://${req.get("host")}/images/${
-          req.file.filename
-        }`;
-
-        // Removing old file image and updating sauce
-        fs.unlink(`images/${filename}`, () => {
-          Sauce.updateOne(
-            { _id: prodId },
-            {
-              ...JSON.parse(req.body.sauce),
-              _id: prodId,
-              imageUrl: sentImageUrl,
-            }
-          )
-            .then(() => {
-              res.status(200).json({ message: "Objet modifié" });
-            })
-            .catch((err) =>
-              res.status(400).json({ message: "Erreur: " + err })
-            );
-        });
-      })
-      .catch((err) => res.status(500).json({ message: "Erreur: " + err }));
-  } else {
-    console.log(req.body);
-    // Updating data sauce when image was not changed
-    Sauce.updateOne({ _id: prodId }, { ...req.body, _id: prodId })
-      .then(() => {
-        // Modify Message if update has partially failed because image was not modify on mimetype error
-        const message = req.mimetypeError
-          ? "Objet modifié. Erreur: L'image n'a pas été modifiée. Veuillez ajouter une image dans le format correct: png, jpg, jpeg."
-          : "Objet modifié.";
-        res.status(200).json({ message: message });
-      })
-      .catch((err) => res.status(400).json({ message: "Erreur: " + err }));
-  }
-};*/

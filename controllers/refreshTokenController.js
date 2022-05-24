@@ -88,7 +88,7 @@ exports.refreshTokenHandler = async (req, res) => {
       const newRefreshToken = jwt.sign(
         { userId: foundToken.userId },
         process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: "5m" }
+        { expiresIn: "15m" }
       );
 
       try {
@@ -105,8 +105,7 @@ exports.refreshTokenHandler = async (req, res) => {
           httpOnly: true,
           sameSite: "none",
           //secure: true,
-          maxAge: 5*60*1000
-          //maxAge: 24 * 60 * 60 * 1000,
+          maxAge: 24 * 60 * 60 * 1000,
         });
       } catch(err) {
         return res.status(500).json({'error':err.message});
@@ -120,7 +119,7 @@ exports.refreshTokenHandler = async (req, res) => {
         }
         },
         process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "30s" }
+        { expiresIn: "15m" }
       );
       // Send new access token
       res.json({

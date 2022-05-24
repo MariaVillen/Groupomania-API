@@ -98,13 +98,13 @@ exports.postLogin = async (req, res) => {
       }
       },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "30s" }
+      { expiresIn: "5m" }
     );
 
     const newRefreshToken = jwt.sign(
       { userId: foundUser.id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "5m" }
+      { expiresIn: "1d" }
     );
 
   
@@ -127,8 +127,7 @@ exports.postLogin = async (req, res) => {
           httpOnly: true,
           sameSite: "none",
           /*secure: true,*/
-          maxAge: 5 * 60 * 1000
-          //maxAge: 24 * 60 * 60 * 1000
+          maxAge: 24 * 60 * 60 * 1000
           });
 
         res.status(200).json({
@@ -161,8 +160,6 @@ exports.postLogin = async (req, res) => {
         // Token is valid
         if (decodedToken) {
           // destroy all refreshTokens from user
-          const userToken = +decodedToken.userId;
-          const userLogged = +foundUser.id;
           const resultTokenUser = await RefreshTokens.destroy({
             where: {
               userId: decodedToken.userId
