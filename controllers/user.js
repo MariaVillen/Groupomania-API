@@ -8,15 +8,17 @@ const ROLES_LIST = require("../utils/roles_list");
 // Get all user from list. Information returned will depends on role.
 // [GET] http://localhost:3000/user
 exports.getAllUsers = (req, res) => {
+
+  // Get the role of the requesting user.
   const roleOfRequestingUser = req.role;
-  //const idOfRequestingUser = req.userId;
+ 
 
   // ADMIN OWNER PERMISSION ONLY: Visible content only for admins.
   if (roleOfRequestingUser === ROLES_LIST.admin) {
 
     Users.findAll({
       attributes: {
-        exclude: ["password, refreshToken"],
+        exclude: ["password"],
       },
       order: [["createdAt", "DESC"]],
     })
@@ -26,18 +28,19 @@ exports.getAllUsers = (req, res) => {
       .catch((err) => {
         res.status(500).json({ DataBaseError: err.message });
       });
-  } else {
-    // ALL USERS PERMISSION: Visible Content for all users. Requesting user is exclude from data.
+  } else if (roleOfRequestingUser === ROLES_LIST.user) {
 
+    // ALL USERS PERMISSION: Visible Content for all users. 
     Users.findAll({
       attributes: {
-        exclude: ["password", "email","refreshToken","deleteAt"],
+        exclude: ["password", "email","deleteAt"],
       },
-      order: [["createdAt", "DESC"]]
-     /* where: {
-        isActive: 1,
-        /*idUsers: { [Op.not]: idOfRequestingUser },
-      }*/
+      order: [["createdAt", "DESC"]],
+      where: {
+        isActive: 1
+
+        /*id: { [Op.not]: idOfRequestingUser },*/
+      }
     })
       .then((data) => {
         console.log(data);
@@ -72,7 +75,9 @@ exports.getUserById = (req, res) => {
         res.status(500).json({ DataBaseError: err.message });
       });
   } else {
+
     let excludedInfo;
+
     if (roleOfRequestingUser === ROLES_LIST.admin) {
       // ADMIN PERMISSION: if the requesting user is admin
       excludedInfo = ["password"];
@@ -93,6 +98,7 @@ exports.getUserById = (req, res) => {
       });
   }
 };
+
 
 // Update user by id. Permissions will control the allowed champs for update.
 // [PUT] http:localhost:3000/user/:id
@@ -116,7 +122,7 @@ exports.updateUser = (req, res) => {
     user
   ) => {
     // FORBIDEN: Not possible to modify un user admin.
-    if (user.role === ROLES_LIST.admin && user.idUsers !== idOfRequestingUser) {
+    if (user.role === ROLES_LIST.admin && user.id !== idOfRequestingUser) {
       return req
         .status(401)
         .json({
@@ -126,6 +132,7 @@ exports.updateUser = (req, res) => {
 
     // ADMIN PERMISSION: admin can modify users except the password.
     else if (roleOfRequestingUser === ROLES_LIST.admin && user.role === "user") {
+
       try {
         return {
           lastName: validation.isName(req.body.user.lastName),
@@ -143,7 +150,7 @@ exports.updateUser = (req, res) => {
     // OWNER USER PERMISSION: owner user can modifiy restricted info.
     else if (
       roleOfRequestingUser === ROLES_LIST.user &&
-      idOfRequestingUser === user.idUsers
+      idOfRequestingUser === user.id
     ) {
       console.log("por ahora bien");
       // Hash Password
@@ -157,10 +164,7 @@ exports.updateUser = (req, res) => {
         password = await bcrypt.hash(pass, 12);
         console.log(password);
       }
-      return {
-        bio: req.body.user.bio,
-        password: password,
-      };
+      return {password: password};
     } else {
       return res
         .status(400)
@@ -170,10 +174,11 @@ exports.updateUser = (req, res) => {
 
   // Find User to Update
 
+
   Users.findByPk(userToUpdate)
     .then(async (user) => {
       if (user) {
-        // TODO: HANDLE AND UPDATE IMAGES
+
         //Get the object only with the allowed modifications by rol.
         const modifiedUser = await getInfoAllowed(
           roleOfRequestingUser,
