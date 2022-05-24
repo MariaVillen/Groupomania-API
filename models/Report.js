@@ -2,7 +2,7 @@ const { Sequelize, Model, DataTypes } = require("sequelize");
 const sequelize = require("../utils/database");
 
 const Reports = sequelize.define("reports", {
-  idReports: {
+  id: {
     type: DataTypes.INTEGER.UNSIGNED,
     autoIncrement: true,
     allowNull: false,
@@ -13,9 +13,9 @@ const Reports = sequelize.define("reports", {
     allowNull: false,
   },
   state: {
-    type: DataTypes.ENUM("Non lu", "En cours", "Fermé", "Rejeté"),
-    default: "Non lu",
-  },
+    type: DataTypes.ENUM("Non lu", "En cours", "Accepté", "Rejeté"),
+    default: "Non lu"
+  }
 });
 
 module.exports = Reports;

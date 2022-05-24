@@ -1,6 +1,6 @@
 const path = require("path");
-const cookieParser = require('cookie-parser');
 const express = require("express");
+const cookieParser = require("cookie-parser");
 
 const helmet = require("helmet");
 
@@ -11,17 +11,17 @@ const postRoutes = require("./routes/post");
 //const reportsRoutes = require("./routes/reports");
 const refreshRoutes = require("./routes/refresh");
 
+
 // Create express instance
 const app = express();
+
 
 // Parse Post Request
 app.use(express.json());
 
-// Routes protection
-app.use(helmet({ crossOriginResourcePolicy: false }));
-
 // CORS authorisation
 app.use((req, res, next) => {
+  
   const origin = req.headers.origin;
 
   if (process.env.ORIGINS_ALLOWED.includes(origin)) {
@@ -41,6 +41,9 @@ app.use((req, res, next) => {
   return next();
 });
 
+// Routes protection
+app.use(helmet({ crossOriginResourcePolicy: false }));
+
 // Cookie Middleware
 app.use(cookieParser());
 
@@ -48,11 +51,11 @@ app.use(cookieParser());
 // User authentication
 app.use("/api/auth", authRoutes);
 // Refresh 
-app.use("/refresh", refreshRoutes);
+app.use("/api/refresh", refreshRoutes);
 // Post routes
 app.use("/api/user", userRoutes);
 // Post routes
-app.use("/api/posts", postRoutes);
+app.use("/api/post", postRoutes);
 // Comments router
 //app.use("/api/comments", commentRoutes);
 // Reports router

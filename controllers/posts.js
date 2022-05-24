@@ -2,9 +2,13 @@ const Posts = require("../models/Post");
 const Users = require("../models/User");
 
 // Add a post
-// [POST] http://localhost:3000/api/posts/add
+// [POST] http://localhost:3000/api/posts/
 // Body Content Expected: {requestingUserId, post: {attachement?, content?, userId}} | {req.file}
 exports.addPost = (req, res) => {
+
+  console.log(req.file, req.body);
+  res.status(200).json({'message': 'hecho'});
+  /*
   let sentImageUrl;
 
   if (req.file) {
@@ -31,7 +35,7 @@ exports.addPost = (req, res) => {
     })
     .catch((err) => {
       res.status(400).json({ error: err.message });
-    });
+    });*/
 };
 
 // Get all Posts

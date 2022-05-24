@@ -2,7 +2,14 @@ const multer = require("multer");
 
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
+    if (file.fieldname === "avatar") { 
+      callback(null, 'images/persons');
+    } else if (file.fieldname === "cover") { // else uploading image
+      callback(null, 'images/covers');
+    } else {
+      console.log('pasando por images');
     callback(null, "images");
+    }
   },
   filename: (req, file, callback) => {
     const name = file.originalname.split(" ").join("_");
@@ -15,7 +22,8 @@ const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === "image/jpg" ||
     file.mimetype === "image/png" ||
-    file.mimetype === "image/jpeg"
+    file.mimetype === "image/jpeg"||
+    file.mimetype === "image/webp" 
   ) {
     cb(null, true);
   } else {
@@ -24,4 +32,5 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-module.exports = multer({ storage, fileFilter: fileFilter }).single("image");
+const upload = multer({storage: storage, fileFilter: fileFilter});
+module.exports = upload;

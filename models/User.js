@@ -8,7 +8,7 @@ const Comments = require("./Comment");
 const Users = sequelize.define(
   "users",
   {
-    idUsers: {
+    id: {
       type: Sequelize.INTEGER.UNSIGNED,
       autoIncrement: true,
       allowNull: false,
@@ -95,29 +95,30 @@ const Users = sequelize.define(
           msg: "Le role doit être admin ou user.",
         },
       },
-    },
-    refreshToken: {
-      type: Sequelize.STRING,
-      defaultValue: ''
-    },
+    }
   },
   { paranoid: true }
 ); // soft delete
 
 // Friends
 Users.belongsToMany(Users, {
-  through: "Friends",
-  as: "idFriend",
+  through: "follows",
+  as: "idFollowing",
+  onDelete: "CASCADE"
+});
+Users.belongsToMany(Users, {
+  through: "follows",
+  as: "idFollowed",
   onDelete: "CASCADE",
 });
 
 // 1 user per Post but a User can have many posts.
-Users.hasMany(Posts);
+Users.hasMany(Posts)
 Posts.belongsTo(Users);
 
 // Like Posts
-Users.belongsToMany(Posts, { through: "likedPosts", onDelete: "CASCADE" });
-Posts.belongsToMany(Users, { through: "likedPosts", onDelete: "CASCADE" });
+Users.belongsToMany(Posts, { through: "likes", onDelete: "CASCADE" });
+Posts.belongsToMany(Users, { through: "likes", onDelete: "CASCADE" });
 
 // 1 user per comment but a user can make many comments.
 Users.hasMany(Comments);
@@ -125,16 +126,22 @@ Comments.belongsTo(Users);
 
 // Like comments
 Users.belongsToMany(Comments, {
-  through: "likedComments",
+  through: "likes",
+  onDelete: "CASCADE",
+});
+// Like comments
+Users.belongsToMany(Posts, {
+  through: "likes",
   onDelete: "CASCADE",
 });
 Comments.belongsToMany(Users, {
-  through: "likedComments",
+  through: "likes",
   onDelete: "CASCADE",
 });
 
 // a reporta has 1 user but a lot of users can make a lot of reports
 Users.hasMany(Reports);
 Reports.belongsTo(Users);
+
 
 module.exports = Users;

@@ -2,7 +2,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { validation } = require("../helpers/validation");
 const Users = require("../models/User");
+const RefreshTokens = require('../models/refreshToken');
 const ROLES_LIST = require("../utils/roles_list");
+const Op = require("sequelize");
 
 // Sign Up new user
 // [POST] http:/localhost:3000/signup
@@ -52,9 +54,10 @@ exports.postSignUp = async (req, res) => {
 // [POST] http:/localhost:3000/login
 // // Body Content Expected: {email, password}
 exports.postLogin = async (req, res) => {
+
+  // recover email
   let { email, password } = req.body;
 
-  email = email.toLowerCase();
 
   // Verify all champs are completed
   if (!email || !password) {
@@ -63,6 +66,10 @@ exports.postLogin = async (req, res) => {
       .json({ error: "Veuillez remplir l'ensemble des champs du formulaire." });
   }
 
+  // email to lowecase-
+  email = email.toLowerCase();
+
+  // find user with email and password
   try {
     const foundUser = await Users.findOne({
       where: { email: email },
@@ -71,10 +78,9 @@ exports.postLogin = async (req, res) => {
     if (!foundUser) {
       return res.status(401).json({ 'error': "Utilisateur non trouvé." });
     }
-    console.log(foundUser.isActive !== 1);
+
     if (foundUser.isActive !== 1) {
-      console.log('pasa por aqui');
-      return res.status(403).json({ 'error': "Le compte de l'utilisateur n'est pas actif." });
+      return res.status(401).json({ 'error': "Le compte de l'utilisateur n'est pas actif." });
     }
 
     // User Found
@@ -82,75 +88,166 @@ exports.postLogin = async (req, res) => {
 
     if (!validPass) {
       return res.status(401).json({ 'error': "Mot the passe incorrecte." });
-    } else {
-      // Valid Password
-      const accessToken = jwt.sign(
-        { "UserInfo": {
-          userId: foundUser.idUsers, userRole: ROLES_LIST[foundUser.role] // sends the code, not the name of role
-        }
-        },
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "15m" }
-      );
+    } 
 
-      const refreshToken = jwt.sign(
-        { userId: foundUser.idUsers },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: "1d" }
-      );
+    // Valid Password
+    const accessToken = jwt.sign(
+      { "UserInfo": {
+        userId: foundUser.id, 
+        userRole: ROLES_LIST[foundUser.role] // sends the code, not the name of role
+      }
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "30s" }
+    );
 
-      // save refresh token
-      const result = await Users.update(
-        { refreshToken: refreshToken },
-        {
-          where: { idUsers: foundUser.idUsers },
-        }
-      );
+    const newRefreshToken = jwt.sign(
+      { userId: foundUser.id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "5m" }
+    );
 
-      // send response
-      if (result) {
-        res.cookie("jwt", refreshToken, {
+  
+    // VERIFY COOKIES
+    const cookies = req.cookies;
+
+    // No cookies
+    if (!cookies?.jwt) {
+
+      const response = await RefreshTokens.create({
+        token: newRefreshToken,
+        userId: foundUser.id
+      })
+
+      if (!response) {
+        console.log("No response");
+      } else {
+
+        res.cookie("jwt", newRefreshToken, {
           httpOnly: true,
           sameSite: "none",
-          secure: true,
-          maxAge: 24 * 60 * 60 * 1000,
-        });
+          /*secure: true,*/
+          maxAge: 5 * 60 * 1000
+          //maxAge: 24 * 60 * 60 * 1000
+          });
 
         res.status(200).json({
-          userId: foundUser.idUsers,
+          userId: foundUser.id,
           userRole: ROLES_LIST[foundUser.role],
           accessToken: accessToken,
         });
+
       }
+    } else {
+    // In this moment we got cookie and user
+    // Get refreshToken from cookie
+    const refreshToken = cookies.jwt; 
+    // Erase old cookie 
+     res.clearCookie("jwt", { httpOnly: true, sameSite: "none"/*, secure: true*/ });
+
+    // Find token in DB
+    const foundToken = await RefreshTokens.findOne({token: refreshToken});
+
+    // No token in DB but there is a cookie : REUSE SITUATION (Using access token with logout).
+    if (!foundToken){
+      // The token of the cookie not found on Bd: REUSE SITUATION!
+      // Extract data from the cookies token.
+
+      jwt.verify(
+       refreshToken,
+       process.env.REFRESH_TOKEN_SECRET,
+       async (err, decodedToken) => {
+
+        // Token is valid
+        if (decodedToken) {
+          // destroy all refreshTokens from user
+          const userToken = +decodedToken.userId;
+          const userLogged = +foundUser.id;
+          const resultTokenUser = await RefreshTokens.destroy({
+            where: {
+              userId: decodedToken.userId
+            }});
+          const resultLoggedUser = await RefreshTokens.destroy({
+            where: {
+              userId: foundUser.id
+            }
+          }); 
+         r
+          return res.sendStatus(403)// Forbidden;
+        }
+        }
+      );
     }
-  } catch (err) {
-    res.status(500).json({ 'error': err.message });
+
+
+    // Token is not valid but is in DB
+    // Old token found, update and change it for the new refresh token
+    await foundToken.destroy();
+    const newToken = await RefreshTokens.create({
+      token: newRefreshToken,
+      userId: foundUser.id
+    });
+
+  // Send new cookies
+  res.cookie("jwt", newRefreshToken, {
+    httpOnly: true,
+      sameSite: "none",
+      //secure: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    }
+  );
+
+  // Sent new access token
+
+  res.status(200).json({
+    userId: foundUser.id,
+    userRole: ROLES_LIST[foundUser.role],
+    accessToken: accessToken,
+  });
+
+
   }
-};
+  } catch (err) {
+    console.log("user not found");
+  }
+}
 
 // Logout Controller
 // [POST] http:/localhost:3000/logout
 exports.postLogout = async (req, res) => {
-  // On client delete de accessToken
-
+  
+  // Get cookies
   const cookies = req.cookies;
-  if (!cookies?.jwt) return res.status(204); // success no content to send back
-  try {
-    // Is refresh token in Db?
-    const foundUser = await Users.findOne({ where: { refreshToken: cookies.jwt } });
-    if (!foundUser) {
+
+  // 
+  if (!cookies?.jwt) {
+    return res.sendStatus(204);
+  } // success no content to send back
+  
+  const refreshToken = cookies.jwt;
+  
+  // Verify if refreshToken is on DB
+
+    // Find the token in DB
+    try{
+      const foundToken = await RefreshTokens.findOne({ where: { token: refreshToken } });
+
+    // Token Not Found
+    if (!foundToken) {
+
+      // Erase de cookie
       res.clearCookie("jwt", {
         httpOnly: true,
         sameSite: "none",
-        secure: true,
+       // secure: true,
       });
-      return res.sendStatus(204); //forbidden
+      return res.sendStatus(204)// success but no content;
+    } else {
+      const result = await foundToken.destroy();
+      res.clearCookie("jwt", { httpOnly: true, sameSite: "none", /*secure: true*/ });
+      return res.sendStatus(204); //Ok but no content to send}
     }
-    // Delete refresh token
-    const result = await foundUser.update({ refreshToken: "" });
-    res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
-    return res.sendStatus(204); //forbidden
-  } catch (err) {
-    res.status(500).json({ 'error': err.message });
-  }
+    }catch(err){
+      res.status(500).json({ 'error': err.message });
+    }
 };

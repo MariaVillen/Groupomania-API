@@ -8,7 +8,7 @@ const { post } = require("../app");
 const Posts = sequelize.define(
   "posts",
   {
-    idPost: {
+    id: {
       type: Sequelize.INTEGER.UNSIGNED,
       autoIncrement: true,
       allowNull: false,

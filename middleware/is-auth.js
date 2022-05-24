@@ -12,14 +12,17 @@ const isAuth = (req, res, next)  => {
       const token = authHeader.split(" ")[1];
 
       // Decode Token to extract userId
-      const decodedToken = jwt.verify(
+      jwt.verify(
         token,
-        process.env.ACCESS_TOKEN_SECRET
+        process.env.ACCESS_TOKEN_SECRET,
+        (err, decoded) =>{
+          if (err) return res.status(403).json({'error':'Token expired or invalid'});
+        req.userId = decoded.UserInfo.userId;
+        req.role = decoded.UserInfo.userRole;
+        console.log(req.role);
+        next();}
       );
-      req.userId = decodedToken.UserInfo.userId;
-      req.role = decodedToken.UserInfo.userRole;
-      console.log(req.role);
-      next();
+    
 }
 
 module.exports = isAuth;

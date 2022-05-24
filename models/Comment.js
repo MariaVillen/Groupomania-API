@@ -6,7 +6,7 @@ const Reports = require("./Report");
 const Comments = sequelize.define(
   "comments",
   {
-    idComment: {
+    id: {
       type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
       allowNull: false,
