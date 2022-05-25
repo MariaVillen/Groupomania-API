@@ -47,7 +47,6 @@ app.use(helmet({ crossOriginResourcePolicy: false }));
 // Cookie Middleware
 app.use(cookieParser());
 
-
 // User authentication
 app.use("/api/auth", authRoutes);
 // Refresh 

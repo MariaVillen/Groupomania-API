@@ -12,16 +12,18 @@ exports.refreshTokenHandler = async (req, res) => {
   // verify Cookies
   const cookies = req.cookies;
 
-  if (!cookies?.jwt) return res.sendStatus(401) //no jwt cookie exists (unlogged / unAuthorized)
+  if (!cookies?.jwt) {
+    return res.sendStatus(401)
+  } //no jwt cookie exists (unlogged / unAuthorized)
   
   const refreshToken = cookies.jwt;
 
   // Erase old cookie 
-  res.clearCookie("jwt", { httpOnly: true, sameSite: "none", /*secure: true*/ })
+  res.clearCookie("jwt", { httpOnly: true, sameSite: "none" ,secure: true })
   
   // Search refersh token in DB
   const foundToken = await RefreshTokens.findOne({ where: { token: refreshToken }, include: Users });
-
+  console.log("FOUNDTOKEN DESPUES DE AWAIT: " , foundToken);
   // Token not found in DB but sent -> REUSE SITUATION!
   if (!foundToken) {
 
@@ -44,13 +46,13 @@ exports.refreshTokenHandler = async (req, res) => {
       }
     );
     } catch(err) {
-      res.status(500).json({'error': err.message});
+      res.status(500).json({'error': err.message + "at verify token"});
     }
   } 
   
   // Token found in DB
   // Recover data from refreshToken 
-
+  console.log("FOUNDTOKEN ANTES VERIFCACION: ", foundToken);
   jwt.verify(
     refreshToken,
     process.env.REFRESH_TOKEN_SECRET,
@@ -58,6 +60,9 @@ exports.refreshTokenHandler = async (req, res) => {
 
       // If token cant be decoded -> REUSE SITUATION!!
       if (err) {
+        console.log("USER FOUNDTOKEN", foundToken.userId);
+        console.log("USER FOUNDTOKEN", foundToken.users.id);
+        console.log("USER FOUNDTOKEN", foundToken.user.id);
         try{
         // Destroy all tokens from user of the token found in DB 
         userOwnerOfToken = foundToken.userId;
@@ -66,25 +71,25 @@ exports.refreshTokenHandler = async (req, res) => {
         })
         return res.sendStatus(403)// Forbidden;
       } catch(err) {
-        return res.status(500).json({'error': err.message});
-      }
-        
+        return res.status(500).json({'error': err.message + "at destroy all tokens"});
+      }}
+      console.log("foundtoken = ", foundToken);
       // Decoded token but id user of token is not the same of the user id of the same token in DB -> REUSE SITUATION!!
-      } else if (foundToken.userId !== decodedToken.userId) {
+      if (foundToken?.userId !== decodedToken?.userId) {
         try{
           const result = await RefreshTokens.destroy({
           where: { [Op.or]: [{userId: decodedToken.userId},{usersId: foundToken.userId}]
           }})
           return res.sendStatus(403)// Forbidden;
         } catch(err) {
-          return res.status(500).json({'error': err.message});
+          return res.status(500).json({'error': err.message + "at not equal users"});
         }  
       }
 
       // Token ok and is equal to the DB user of Token.
 
       // Create new Refresh Token 
-
+      console.log("foundtoken antes de creare refresh token normal", foundToken);
       const newRefreshToken = jwt.sign(
         { userId: foundToken.userId },
         process.env.REFRESH_TOKEN_SECRET,
@@ -92,23 +97,25 @@ exports.refreshTokenHandler = async (req, res) => {
       );
 
       try {
-      // update refresh token
-      const result = await RefreshTokens.update(
-        { token: newRefreshToken },
-        {
-          where: { token: foundToken },
-        }
+      
+        // Destroy old refresh token and create a new one.
+        const userId = foundToken.userId;
+        console.log("userId antes de crear token");
+        const created = await RefreshTokens.create(
+        { token: newRefreshToken,
+          userId: userId},
       );
-
+        await foundToken.destroy();
+        
       // Send new Cookie
-        res.cookie("jwt", refreshToken, {
+        res.cookie("jwt", newRefreshToken, {
           httpOnly: true,
           sameSite: "none",
-          //secure: true,
+          secure: true,
           maxAge: 24 * 60 * 60 * 1000,
         });
       } catch(err) {
-        return res.status(500).json({'error':err.message});
+        return res.status(500).json({'error': err.message + "at create refresh token"});
       }
 
       // Create a new access token  
@@ -123,7 +130,7 @@ exports.refreshTokenHandler = async (req, res) => {
       );
       // Send new access token
       res.json({
-        userId: foundToken.usersId,
+        userId: foundToken.userId,
         userRole: ROLES_LIST[foundToken.user.role],
         accessToken: accessToken,
       });

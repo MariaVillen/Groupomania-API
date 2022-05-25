@@ -2,23 +2,22 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { validation } = require("../helpers/validation");
 const Users = require("../models/User");
-const RefreshTokens = require('../models/refreshToken');
+const RefreshTokens = require("../models/refreshToken");
 const ROLES_LIST = require("../utils/roles_list");
 const Op = require("sequelize");
 
 // Sign Up new user
-// [POST] http:/localhost:3000/signup
+// [POST] http:/localhost:3000/auth/signup
 // Body Content Expected: {email, password, name, lastName}
 
 exports.postSignUp = async (req, res) => {
   let { lastName, name, email, password } = req.body;
-  console.log(req.body);
 
   // Verify all champs are completed
   if (!email || !password || !lastName || !name) {
     return res
       .status(400)
-      .json({ 'error': "Veuillez remplir l'ensemble des champs du formulaire." });
+      .json({ error: "Veuillez remplir l'ensemble des champs du formulaire." });
   }
 
   // Champs validation
@@ -29,7 +28,8 @@ exports.postSignUp = async (req, res) => {
     name = validation.isName(name);
   } catch (err) {
     console.log(err);
-    return res.status(400).json({ 'error': err.message });
+
+    return res.status(400).json({ error: err.message });
   }
 
   // Hashing password and creating user
@@ -46,18 +46,17 @@ exports.postSignUp = async (req, res) => {
       message: `Nouvel utilisateur ${newUser.name} ${newUser.lastName} créé.`,
     });
   } catch (err) {
-    res.status(400).json({ 'error': err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
 // Login user
-// [POST] http:/localhost:3000/login
+// [POST] http:/localhost:3000/auth/login
 // // Body Content Expected: {email, password}
 exports.postLogin = async (req, res) => {
-
-  // recover email
+  
+  // Recover email
   let { email, password } = req.body;
-
 
   // Verify all champs are completed
   if (!email || !password) {
@@ -66,36 +65,41 @@ exports.postLogin = async (req, res) => {
       .json({ error: "Veuillez remplir l'ensemble des champs du formulaire." });
   }
 
-  // email to lowecase-
+  // Email to lowecase-
   email = email.toLowerCase();
 
-  // find user with email and password
+  // Find user with email and password
   try {
     const foundUser = await Users.findOne({
       where: { email: email },
     });
 
     if (!foundUser) {
-      return res.status(401).json({ 'error': "Utilisateur non trouvé." });
+      return res.status(401).json({ error: "Utilisateur non trouvé." });
     }
 
     if (foundUser.isActive !== 1) {
-      return res.status(401).json({ 'error': "Le compte de l'utilisateur n'est pas actif." });
+      return res
+        .status(401)
+        .json({ error: "Le compte de l'utilisateur n'est pas actif." });
     }
 
     // User Found
     const validPass = await bcrypt.compare(password, foundUser.password);
 
     if (!validPass) {
-      return res.status(401).json({ 'error': "Mot the passe incorrecte." });
-    } 
+      return res.status(401).json({ error: "Mot the passe incorrecte." });
+    }
 
-    // Valid Password
+    // The password is valid 
+    // Creating new tokens
+
     const accessToken = jwt.sign(
-      { "UserInfo": {
-        userId: foundUser.id, 
-        userRole: ROLES_LIST[foundUser.role] // sends the code, not the name of role
-      }
+      {
+        UserInfo: {
+          userId: foundUser.id,
+          userRole: ROLES_LIST[foundUser.role], // send the code-role (Set with ROLES_LIST), not the name of role.
+        },
       },
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "5m" }
@@ -107,144 +111,156 @@ exports.postLogin = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-  
-    // VERIFY COOKIES
+    // Cookies verification
     const cookies = req.cookies;
 
-    // No cookies
+    // Case: no cookies
     if (!cookies?.jwt) {
 
-      const response = await RefreshTokens.create({
+      // Save new refresh token to Db
+      await RefreshTokens.create({
         token: newRefreshToken,
-        userId: foundUser.id
-      })
+        userId: foundUser.id,
+      });
 
-      if (!response) {
-        console.log("No response");
-      } else {
+      // Send new cookie with refresh token
+      res.cookie("jwt", newRefreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
 
-        res.cookie("jwt", newRefreshToken, {
-          httpOnly: true,
-          sameSite: "none",
-          /*secure: true,*/
-          maxAge: 24 * 60 * 60 * 1000
-          });
+      // Send new access token
+      res.status(200).json({
+        userId: foundUser.id,
+        userRole: ROLES_LIST[foundUser.role],
+        accessToken: accessToken,
+      });
 
-        res.status(200).json({
-          userId: foundUser.id,
-          userRole: ROLES_LIST[foundUser.role],
-          accessToken: accessToken,
-        });
 
-      }
-    } else {
-    // In this moment we got cookie and user
+      // Case: cookies found
+  } else {
+
+    // In this moment we have a cookie and a user
+
     // Get refreshToken from cookie
-    const refreshToken = cookies.jwt; 
-    // Erase old cookie 
-     res.clearCookie("jwt", { httpOnly: true, sameSite: "none"/*, secure: true*/ });
+    const refreshToken = cookies.jwt;
+    
+    // Erase old cookie
+    res.clearCookie("jwt", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+    });
 
-    // Find token in DB
-    const foundToken = await RefreshTokens.findOne({token: refreshToken});
+    // Find token of cookie in DB
+    const foundToken = await RefreshTokens.findOne({ token: refreshToken });
+ 
 
-    // No token in DB but there is a cookie : REUSE SITUATION (Using access token with logout).
-    if (!foundToken){
-      // The token of the cookie not found on Bd: REUSE SITUATION!
+    // No token in DB but there is a cookie : REUSE SITUATION.
+
+    if (!foundToken) {
+
       // Extract data from the cookies token.
-
       jwt.verify(
-       refreshToken,
-       process.env.REFRESH_TOKEN_SECRET,
-       async (err, decodedToken) => {
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+        async (err, decodedToken) => {
 
-        // Token is valid
-        if (decodedToken) {
-          // destroy all refreshTokens from user
-          const resultTokenUser = await RefreshTokens.destroy({
-            where: {
-              userId: decodedToken.userId
-            }});
-          const resultLoggedUser = await RefreshTokens.destroy({
-            where: {
-              userId: foundUser.id
-            }
-          }); 
-         r
-          return res.sendStatus(403)// Forbidden;
-        }
+          // Token is valid but not in db
+          if (decodedToken) {
+
+            // Destroy all refreshTokens of the user of the cookie
+            await RefreshTokens.destroy({
+              where: {
+                userId: decodedToken.userId,
+              },
+            });
+
+            // Destroy all refreshTokens of the user logged.
+            await RefreshTokens.destroy({
+              where: {
+                userId: foundUser.id,
+              },
+            });}
+
+            // In all case send 403 (token not valid and not in db also)
+            return res.sendStatus(403); // Forbidden;
         }
       );
     }
 
-
-    // Token is not valid but is in DB
+    // Cookie found in DB an there is a cookie
     // Old token found, update and change it for the new refresh token
     await foundToken.destroy();
-    const newToken = await RefreshTokens.create({
+
+   await RefreshTokens.create({
       token: newRefreshToken,
-      userId: foundUser.id
+      userId: foundUser.id,
     });
 
-  // Send new cookies
-  res.cookie("jwt", newRefreshToken, {
-    httpOnly: true,
+    // Send new cookies
+    res.cookie("jwt", newRefreshToken, {
+      httpOnly: true,
       sameSite: "none",
-      //secure: true,
-    maxAge: 24 * 60 * 60 * 1000,
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    // Sent new access token
+
+    res.status(200).json({
+      userId: foundUser.id,
+      userRole: ROLES_LIST[foundUser.role],
+      accessToken: accessToken,
+    });
     }
-  );
-
-  // Sent new access token
-
-  res.status(200).json({
-    userId: foundUser.id,
-    userRole: ROLES_LIST[foundUser.role],
-    accessToken: accessToken,
-  });
-
-
-  }
   } catch (err) {
     console.log("user not found");
   }
-}
+};
 
 // Logout Controller
-// [POST] http:/localhost:3000/logout
+// [POST] http:/localhost:3000/auth/logout
 exports.postLogout = async (req, res) => {
-  
   // Get cookies
   const cookies = req.cookies;
 
-  // 
+  //
   if (!cookies?.jwt) {
     return res.sendStatus(204);
   } // success no content to send back
-  
+
   const refreshToken = cookies.jwt;
-  
+
   // Verify if refreshToken is on DB
 
-    // Find the token in DB
-    try{
-      const foundToken = await RefreshTokens.findOne({ where: { token: refreshToken } });
+  // Find the token in DB
+  try {
+    const foundToken = await RefreshTokens.findOne({
+      where: { token: refreshToken },
+    });
 
     // Token Not Found
     if (!foundToken) {
-
       // Erase de cookie
       res.clearCookie("jwt", {
         httpOnly: true,
         sameSite: "none",
-       // secure: true,
+        secure: true,
       });
-      return res.sendStatus(204)// success but no content;
+      return res.sendStatus(204); // success but no content;
     } else {
-      const result = await foundToken.destroy();
-      res.clearCookie("jwt", { httpOnly: true, sameSite: "none", /*secure: true*/ });
+      await foundToken.destroy();
+      res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+      });
       return res.sendStatus(204); //Ok but no content to send}
     }
-    }catch(err){
-      res.status(500).json({ 'error': err.message });
-    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

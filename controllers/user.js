@@ -1,5 +1,4 @@
 const Users = require("../models/User");
-const { Op } = require("sequelize");
 const bcrypt = require("bcryptjs");
 const { validation } = require("../helpers/validation");
 const ROLES_LIST = require("../utils/roles_list");
@@ -23,7 +22,7 @@ exports.getAllUsers = (req, res) => {
       order: [["createdAt", "DESC"]],
     })
       .then((data) => {
-        console.log(data);
+
         res.status(200).json(data);
       })
       .catch((err) => {
@@ -44,7 +43,7 @@ exports.getAllUsers = (req, res) => {
       }
     })
       .then((data) => {
-        console.log(data);
+
         res.status(200).json(data);
       })
       .catch((err) => {
