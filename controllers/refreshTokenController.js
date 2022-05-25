@@ -52,7 +52,7 @@ exports.refreshTokenHandler = async (req, res) => {
   
   // Token found in DB
   // Recover data from refreshToken 
-  console.log("FOUNDTOKEN ANTES VERIFCACION: ", foundToken);
+
   jwt.verify(
     refreshToken,
     process.env.REFRESH_TOKEN_SECRET,
@@ -60,9 +60,6 @@ exports.refreshTokenHandler = async (req, res) => {
 
       // If token cant be decoded -> REUSE SITUATION!!
       if (err) {
-        console.log("USER FOUNDTOKEN", foundToken.userId);
-        console.log("USER FOUNDTOKEN", foundToken.users.id);
-        console.log("USER FOUNDTOKEN", foundToken.user.id);
         try{
         // Destroy all tokens from user of the token found in DB 
         userOwnerOfToken = foundToken.userId;
