@@ -102,7 +102,7 @@ exports.postLogin = async (req, res) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "5m" }
+      { expiresIn: "15m" }
     );
 
     const newRefreshToken = jwt.sign(
@@ -222,7 +222,7 @@ exports.postLogin = async (req, res) => {
 };
 
 // Logout Controller
-// [POST] http:/localhost:3000/auth/logout
+// [POST] http:/localhost:3000/auth/rslogout
 exports.postLogout = async (req, res) => {
   // Get cookies
   const cookies = req.cookies;
