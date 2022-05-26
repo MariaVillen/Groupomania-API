@@ -1,5 +1,6 @@
 const Posts = require("../models/Post");
 const Users = require("../models/User");
+const ROLES_LIST = require("../utils/roles_list");
 
 // Add a post
 // [POST] http://localhost:3000/api/posts/
@@ -98,8 +99,63 @@ exports.getPostByUserId = (req, res) => {
 
 // Update a single Post by Id
 // [PUT] http://localhost:3000/api/posts/:id
-exports.updatePostById = (req, res) => {
-  const postToUpdate = req.params.id;
+exports.updatePostById = async (req, res) => {
+  
+  const postToUpdate = parseInt(req.params.id);
+  const roleOfRequestingUser = req.role;
+  const idOfRequestingUser = req.userId;
+
+  if(!postToUpdate){
+    return res.status(400).json({'error':'Indiquez le id du post a modifier'});
+  }
+
+  try {
+    const foundPost = await Posts.findByPk(postToUpdate);
+    
+    if (foundPost && (req.file || req.body.content)) {
+
+      if ((idOfRequestingUser === foundPost.userId)||roleOfRequestingUser === ROLES_LIST.admin) {
+        
+        let infoToUpdate
+
+        if (req.body.content) {
+          infoToUpdate = {content: req.body.content}
+        }
+          
+        if (req.file) {
+
+          // Getting file name
+          sentImageUrl = `${req.protocol}://${req.get("host")}/images/posts/${
+            req.file.filename
+          }`;
+          // If the image sauce is not of the correct mimetype return error.
+          if (req.mimetypeError) {
+            return res.status(400).json({
+              message:
+                "Erreur: le fichier n'est pas dans un format valide: png, jpg, webp ou jpeg",
+            });
+          }
+
+          infoToUpdate = {...infoToUpdate, attachement: sentImageUrl};
+        }
+
+        await Posts.update(infoToUpdate,{
+          where: {
+            id: postToUpdate
+          }});
+      
+          
+
+      } else {
+        return res.status(401).json({"error": "Vous n'avez pas les privileges nécessaires"})
+      } 
+    } else {
+      return res.status(400).json({"error": "Elements manquantes"})
+    } 
+  } catch (error) {
+    res.status(500).json({"error": error.message});
+  }
+
 };
 
 // Like / dislike handler

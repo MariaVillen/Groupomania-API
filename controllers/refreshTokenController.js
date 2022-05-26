@@ -103,7 +103,7 @@ exports.refreshTokenHandler = async (req, res) => {
           
       } else {
         // kill al tokens of userDB and TokenDB
-        RefreshTokens.destroy({
+        /*RefreshTokens.destroy({
           where: {
             [Op.or]: [
               { userId: cookieTokenDecoded.userId },
@@ -112,17 +112,19 @@ exports.refreshTokenHandler = async (req, res) => {
           },
         })
         .then(()=> {return res.sendStatus(403)})
-        .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})});
+        .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})});*/
+                 console.log('FUCK YOU ERROR');
       }
 
    // NO TOKEN FOUND IN DB
    } else {
 
-    RefreshTokens.destroy({
+    /**RefreshTokens.destroy({
       where: { userId: foundToken.userId },
     })
     .then(()=>{ return res.sendStatus(403)} )
-    .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})})
+    .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})})*/
+    console.log('FUCK YOU ERROR');
    }
   })
   .catch((err)=> { return res.status(500).json({"DataBaseError": err.message})})
