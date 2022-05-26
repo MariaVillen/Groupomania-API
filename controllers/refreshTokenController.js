@@ -1,141 +1,129 @@
 const jwt = require("jsonwebtoken");
-const ROLES_LIST = require('../utils/roles_list');
-const RefreshTokens = require('../models/RefreshToken');
-const Users = require('../models/User');
-const { Op } = require('sequelize');
-const res = require("express/lib/response");
-
+const ROLES_LIST = require("../utils/roles_list");
+const RefreshTokens = require("../models/RefreshToken");
+const Users = require("../models/User");
+const { Op } = require("sequelize");
+const { send } = require("express/lib/response");
 
 
 exports.refreshTokenHandler = async (req, res) => {
-  
-  // verify Cookies
+
+
+  // 1 - Verify Cookies
   const cookies = req.cookies;
 
+  // 1.A ) No cookies sent
   if (!cookies?.jwt) {
-    return res.sendStatus(401)
-  } //no jwt cookie exists (unlogged / unAuthorized)
+    return res.status(401).json({'error':' No cookies sent'});
+  }
+
+  // 1.B) Cookies sent
   
   const refreshToken = cookies.jwt;
+  res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
 
-  // Erase old cookie 
-  res.clearCookie("jwt", { httpOnly: true, sameSite: "none" ,secure: true })
+  // 2 - Verify cookie Token 
+  const cookieTokenDecoded = jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  )
+
+  // 3 - Search cookie in DB
+
+  RefreshTokens.findOne({
+    where: {
+      token: refreshToken
+    },
+    include: Users
+  })
   
-  // Search refersh token in DB
-  try {
-  const foundToken = await RefreshTokens.findOne({ where: { token: refreshToken }, include: Users });
+  .then( (foundToken) => {
 
-  // Token not found in DB but sent -> REUSE SITUATION!
- 
-  if (!foundToken) {
-
-      // Decodificamos el token in cookies
-      try {
-      jwt.verify(
-        refreshToken, 
-        process.env.REFRESH_TOKEN_SECRET,
-        async (err, decodedToken) => {
-          // can't decodify
-          if (err) {return res.sendStatus(403); //Forbidden
-          } else {
-            // erase all tokens from user's cookies.
-            const userOwnerOfToken = decodedToken.userId
-            const result = await RefreshTokens.destroy({
-              where: {userId: userOwnerOfToken}
-            })
-            return res.sendStatus(403);
-          }
-        }
-      );
-      } catch(err) {
-        res.status(500).json({'error': err.message + "at verify token"});
+    if (!foundToken) {
+      if (cookieTokenDecoded) {
+        // reuse situation
+        RefreshTokens.destroy({
+          where: { userId: cookieTokenDecoded.userId },
+        })
+        .then(()=> {return res.sendStatus(403)})
+        .catch((err)=> {return res.status(500).json({'error': err.message})});
+      } else {
+        return res.sendStatus(403);
       }
-    } 
-  
-    jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET,
-      async (err, decodedToken) => {
-  
-        // If token cant be decoded -> REUSE SITUATION!!
-        if (err) {
-          try{
-          // Destroy all tokens from user of the token found in DB 
-          userOwnerOfToken = foundToken.userId;
-          const result = await RefreshTokens.destroy({
-          where: {userId: userOwnerOfToken}
-          })
-          return res.sendStatus(403)// Forbidden;
-        } catch(err) {
-          return res.status(500).json({'error': err.message + "at destroy all tokens"});
-        }}
-        console.log("foundtoken L73 = ", foundToken);
-        // Decoded token but id user of token is not the same of the user id of the same token in DB -> REUSE SITUATION!!
-        if (foundToken.userId !== decodedToken.userId) {
-          try{
-            const result = await RefreshTokens.destroy({
-            where: { [Op.or]: [{userId: decodedToken.userId},{usersId: foundToken.userId}]
-            }})
-            return res.sendStatus(403)// Forbidden;
-          } catch(err) {
-            return res.status(500).json({'error': err.message + "at not equal users"});
-          }  
-        }
-  
-        // Token ok and is equal to the DB user of Token.
-  
-        // Create new Refresh Token 
-        const newRefreshToken = jwt.sign(
-          { userId: foundToken.userId },
-          process.env.REFRESH_TOKEN_SECRET,
-          { expiresIn: "1d" }
-        );
-  
-        try {
+    }
+
+    // FOUND TOKEN IN DB
+
+    if(cookieTokenDecoded) {
+      // verficar si token y db tienen el mismo user
+      if (cookieTokenDecoded.userId === foundToken.userId) {
+        // ******** SUCCESS ***************//
         
-          // Destroy old refresh token and create a new one.
-          const userId = foundToken.userId;
-          console.log("userId antes de crear token");
-          const created = await RefreshTokens.create(
-          { token: newRefreshToken,
-            userId: userId},
-        );
-          await foundToken.destroy();
+            // Create new Refresh Token
+            const newRefreshToken = jwt.sign(
+              { userId: foundToken.userId },
+              process.env.REFRESH_TOKEN_SECRET,
+              { expiresIn: "1d" }
+            );
+
+            // Create a new access token
+            const accessToken = jwt.sign(
+              {
+                UserInfo: {
+                  userId: cookieTokenDecoded.userId,
+                  userRole: ROLES_LIST[foundToken.user.role], // sends the code, not the name of role
+                },
+              },
+              process.env.ACCESS_TOKEN_SECRET,
+              { expiresIn: "15m" }
+            );
+
+            RefreshTokens.update(
+              {token: newRefreshToken}, 
+              { where: {
+              token: refreshToken,
+              userId: foundToken.userId}}
+              ).then(()=>{
+
+                 // Send new Cookie
+            res.cookie("jwt", newRefreshToken, {
+              httpOnly: true,
+              sameSite: "none",
+              secure: true,
+              maxAge: 24 * 60 * 60 * 1000,
+            })
+
+               // Send new access token
+            return res.json({
+              userId: foundToken.userId,
+              userRole: ROLES_LIST[foundToken.user.role],
+              accessToken: accessToken,
+            });
+           })
           
-        // Send new Cookie
-          res.cookie("jwt", newRefreshToken, {
-            httpOnly: true,
-            sameSite: "none",
-            secure: true,
-            maxAge: 24 * 60 * 60 * 1000,
-          });
-        } catch(err) {
-          return res.status(500).json({'error': err.message + "at create refresh token"});
-        }
-  
-        // Create a new access token  
-        const accessToken = jwt.sign(
-          { "UserInfo": {
-            userId: decodedToken.userId, 
-            userRole: ROLES_LIST[foundToken.user.role] // sends the code, not the name of role
-          }
+      } else {
+        // kill al tokens of userDB and TokenDB
+        RefreshTokens.destroy({
+          where: {
+            [Op.or]: [
+              { userId: cookieTokenDecoded.userId },
+              { userId: foundToken.userId },
+            ],
           },
-          process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "15m" }
-        );
-        // Send new access token
-        res.json({
-          userId: foundToken.userId,
-          userRole: ROLES_LIST[foundToken.user.role],
-          accessToken: accessToken,
-        });
+        })
+        .then(()=> {return res.sendStatus(403)})
+        .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})});
       }
-    );
 
-  } catch(err) {console.log(err);} // try catch findOne token
-  
-  // Token found in DB
-  // Recover data from refreshToken 
+   // NO TOKEN FOUND IN DB
+   } else {
 
-  
-};
+    RefreshTokens.destroy({
+      where: { userId: foundToken.userId },
+    })
+    .then(()=>{ return res.sendStatus(403)} )
+    .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})})
+   }
+  })
+  .catch((err)=> { return res.status(500).json({"DataBaseError": err.message})})
+}

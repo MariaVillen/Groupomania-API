@@ -20,10 +20,20 @@ const Posts = sequelize.define(
     content: {
       type: Sequelize.TEXT,
     },
-    likes: {
+    totalLikes: {
       type: Sequelize.INTEGER.UNSIGNED,
-      default: 0,
+      defaultValue: 0,
     },
+    totalComments: {
+      type: Sequelize.INTEGER.UNSIGNED,
+      defaultValue: 0
+    },
+    createdAt: {
+    type: Sequelize.DATE,          
+    },
+    updatedAt: {
+    type: Sequelize.DATE,
+    }
   },
   { paranoid: true }
 );

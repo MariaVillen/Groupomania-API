@@ -7,35 +7,39 @@ const Users = require("../models/User");
 exports.addPost = (req, res) => {
 
   console.log(req.file, req.body);
-  res.status(200).json({'message': 'hecho'});
-  /*
+
   let sentImageUrl;
 
   if (req.file) {
+
     // Getting file name
-    sentImageUrl = `${req.protocol}://${req.get("host")}/images/${
+    sentImageUrl = `${req.protocol}://${req.get("host")}/images/posts/${
       req.file.filename
     }`;
     // If the image sauce is not of the correct mimetype return error.
     if (req.mimetypeError) {
       return res.status(400).json({
         message:
-          "Erreur: le fichier n'est pas dans un format valide: png, jpg ou jpeg",
+          "Erreur: le fichier n'est pas dans un format valide: png, jpg, webp ou jpeg",
       });
     }
   }
 
+  if (req.body.content || sentImageUrl) {
   Posts.create({
     attachement: sentImageUrl,
-    content: req.body.post.content,
-    userIdUsers: req.body.post.userId,
+    content: req.body.content,
+    userId: req.body.userId,
   })
     .then(() => {
       res.status(200).json({ message: "Publication ajoutée!" });
     })
     .catch((err) => {
-      res.status(400).json({ error: err.message });
-    });*/
+      return res.status(400).json({ error: err.message });
+    });}
+    else {
+      return res.status(400).json({"error": "Vous devez ajouter ou bien une image ou bien du texte."})
+    }
 };
 
 // Get all Posts
@@ -46,7 +50,7 @@ exports.getAllPosts = (req, res) => {
       res.status(200).json(data);
     })
     .catch((err) => {
-      res.status(401).json({ error: err.message });
+      res.status(500).json({ error: err.message });
     });
 };
 

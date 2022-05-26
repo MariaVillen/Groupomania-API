@@ -8,7 +8,7 @@ const storage = multer.diskStorage({
       callback(null, 'images/covers');
     } else {
       console.log('pasando por images');
-    callback(null, "images");
+    callback(null, "images/posts");
     }
   },
   filename: (req, file, callback) => {
