@@ -36,96 +36,108 @@ exports.refreshTokenHandler = async (req, res) => {
     },
     include: Users
   })
-  
+  // CASE TOKEN NOT FOUND IN DB
   .then( (foundToken) => {
-
+    console.log("encontro el foundtoken? : ", foundToken);
     if (!foundToken) {
-      if (cookieTokenDecoded) {
-        // reuse situation
-        RefreshTokens.destroy({
-          where: { userId: cookieTokenDecoded.userId },
-        })
-        .then(()=> {return res.sendStatus(403)})
-        .catch((err)=> {return res.status(500).json({'error': err.message})});
-      } else {
-        return res.sendStatus(403);
-      }
-    }
+      // reuse situation
 
-    // FOUND TOKEN IN DB
-
-    if(cookieTokenDecoded) {
-      // verficar si token y db tienen el mismo user
-      if (cookieTokenDecoded.userId === foundToken.userId) {
-        // ******** SUCCESS ***************//
-        
-            // Create new Refresh Token
-            const newRefreshToken = jwt.sign(
-              { userId: foundToken.userId },
-              process.env.REFRESH_TOKEN_SECRET,
-              { expiresIn: "1d" }
-            );
-
-            // Create a new access token
-            const accessToken = jwt.sign(
-              {
-                UserInfo: {
-                  userId: cookieTokenDecoded.userId,
-                  userRole: ROLES_LIST[foundToken.user.role], // sends the code, not the name of role
-                },
-              },
-              process.env.ACCESS_TOKEN_SECRET,
-              { expiresIn: "15m" }
-            );
-
-            RefreshTokens.update(
-              {token: newRefreshToken}, 
-              { where: {
-              token: refreshToken,
-              userId: foundToken.userId}}
-              ).then(()=>{
-
-                 // Send new Cookie
-            res.cookie("jwt", newRefreshToken, {
-              httpOnly: true,
-              sameSite: "none",
-              secure: true,
-              maxAge: 24 * 60 * 60 * 1000,
-            })
-
-               // Send new access token
-            return res.json({
-              userId: foundToken.userId,
-              userRole: ROLES_LIST[foundToken.user.role],
-              accessToken: accessToken,
-            });
-           })
-          
-      } else {
-        // kill al tokens of userDB and TokenDB
-        /*RefreshTokens.destroy({
-          where: {
-            [Op.or]: [
-              { userId: cookieTokenDecoded.userId },
-              { userId: foundToken.userId },
-            ],
-          },
-        })
-        .then(()=> {return res.sendStatus(403)})
-        .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})});*/
-                 console.log('FUCK YOU ERROR');
-      }
-
-   // NO TOKEN FOUND IN DB
-   } else {
-
-    /**RefreshTokens.destroy({
-      where: { userId: foundToken.userId },
-    })
-    .then(()=>{ return res.sendStatus(403)} )
-    .catch((err)=> {return res.status(500).json({"DataBaseError": err.message})})*/
-    console.log('FUCK YOU ERROR');
+      const userId = (cookieTokenDecoded) ? cookieTokenDecoded.userId : foundToken.userId;
+      console.log("no lo encontró, destruimos todo");
+      RefreshTokens.destroy({
+          where: { userId: userId },
+      })
+      .then(()=>{ 
+        console.log("enviamos respuest 403");
+        return res.sendStatus(403)})
+      .catch((err)=> { 
+        console.log("enviamos respuesta 500", err); 
+        return res.status(500).json({"DataBaseError": err.message})
+      })
+    } else {
+    return foundToken;
    }
   })
-  .catch((err)=> { return res.status(500).json({"DataBaseError": err.message})})
+  // FOUND TOKEN
+  // CASE FOUND TOKEN USER NOT EQUAL USER TOKEN DB
+  .then ((foundToken)=>{
+    
+    console.log("el token se decodifico, vamos a ver si son los mismos usuariso el del token y el de la db");
+    
+    if (cookieTokenDecoded && (cookieTokenDecoded.userId !== foundToken?.userId) ) {
+     // kill al tokens of userDB and TokenDB
+     console.log("el token de usuario no es el mismo que el de la db");
+     RefreshTokens.destroy({
+      where: {
+        [Op.or]: [
+          { userId: cookieTokenDecoded.userId },
+          { userId: foundToken.userId },
+        ],
+      },
+    })
+    .then(()=> { 
+      console.log("enviamos 403 2dothen"); 
+      return res.sendStatus(403)})
+    .catch((err)=> { 
+      console.log("enviamos 500 2othen"); 
+      return res.status(500).json({"DataBaseError": err.message})})
+    } else {
+      return foundToken 
+    }
+  })
+
+  // SUCCESS
+  .then ((foundToken)=>{
+    console.log("todo ha ido bien");
+  // Create new Refresh Token
+  const newRefreshToken = jwt.sign(
+    { userId: foundToken.userId },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "1d" }
+  );
+  // Create a new access token
+  const accessToken = jwt.sign(
+    {
+      UserInfo: {
+        userId: cookieTokenDecoded.userId,
+        userRole: ROLES_LIST[foundToken.user.role], // sends the code, not the name of role
+      },
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
+    console.log("hacemos el update del refresh token");
+  RefreshTokens.update(
+    {token: newRefreshToken}, 
+    { where: {
+    token: refreshToken,
+    userId: foundToken.userId}}
+  )
+  .then((result)=>{
+
+    if (result) {
+    // Send new Cookie
+    console.log("enviamos cookie y accessToken");
+      res.cookie("jwt", newRefreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+
+        // Send new access token
+      return res.status(200).json({
+        userId: foundToken.userId,
+        userRole: ROLES_LIST[foundToken.user.role],
+        accessToken: accessToken,
+      });
+    } else {
+      return res.status(400).json({"error": "Can't update"});
+    }
+  })
+  })
+  .catch((err)=> {
+    console.log("este es el ultimo catche respuest 500"); 
+    res.status(500).json({"DataBaseError": err})
+  })
 }

@@ -100,25 +100,15 @@ const Users = sequelize.define(
   { paranoid: true }
 ); // soft delete
 
-// Friends
-Users.belongsToMany(Users, {
-  through: "follows",
-  as: "idFollowing",
-  onDelete: "CASCADE"
-});
-Users.belongsToMany(Users, {
-  through: "follows",
-  as: "idFollowed",
-  onDelete: "CASCADE",
-});
 
+Users.belongsToMany(Users, { as: "followingId",through: 'follows', foreignKey: 'followingId', otherKey: 'followedId' })
 // 1 user per Post but a User can have many posts.
 Users.hasMany(Posts)
 Posts.belongsTo(Users);
 
 // Like Posts
-Users.belongsToMany(Posts, { through: "likes", onDelete: "CASCADE" });
-Posts.belongsToMany(Users, { through: "likes", onDelete: "CASCADE" });
+Users.belongsToMany(Posts, { through: "likesPost", onDelete: "CASCADE" });
+Posts.belongsToMany(Users, { through: "likesPost", onDelete: "CASCADE" });
 
 // 1 user per comment but a user can make many comments.
 Users.hasMany(Comments);
@@ -126,16 +116,12 @@ Comments.belongsTo(Users);
 
 // Like comments
 Users.belongsToMany(Comments, {
-  through: "likes",
+  through: "likesComment",
   onDelete: "CASCADE",
 });
-// Like comments
-Users.belongsToMany(Posts, {
-  through: "likes",
-  onDelete: "CASCADE",
-});
+
 Comments.belongsToMany(Users, {
-  through: "likes",
+  through: "likesComment",
   onDelete: "CASCADE",
 });
 

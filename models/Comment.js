@@ -17,7 +17,7 @@ const Comments = sequelize.define(
     },
     likes: {
       type: DataTypes.INTEGER.UNSIGNED,
-      default: 0,
+      defaultValue: 0,
     },
   },
   { paranoid: true }

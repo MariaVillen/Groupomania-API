@@ -39,11 +39,11 @@ const Posts = sequelize.define(
 );
 
 // un post can have a lot of comments but a comment belongs only to 1 post.
-Posts.hasMany(Comments, { onDelete: "CASCADE" });
+Posts.hasMany(Comments, { onDelete: "cascade", hooks: true });
 Comments.belongsTo(Posts);
 
 // un post can have many reports and a lot of reports but un report only is related to 1 post.
-Posts.hasMany(Reports, { onDelete: "CASCADE" });
-Reports.belongsTo(Posts, { onDelete: "CASCADE" });
+Posts.hasMany(Reports, { onDelete: "cascade", hooks: true });
+Reports.belongsTo(Posts);
 
 module.exports = Posts;

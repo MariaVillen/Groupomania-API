@@ -66,7 +66,7 @@ server.on("listening", () => {
 
 // Syncronize models of DB
 sequelize
-  .sync({ alter: true})
+  .sync({})
   .then(() => {
     server.listen(port);
   })

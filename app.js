@@ -7,7 +7,7 @@ const helmet = require("helmet");
 const userRoutes = require("./routes/user");
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/post");
-//const commentRoutes = require("./routes/comments");
+const commentRoutes = require("./routes/comments");
 //const reportsRoutes = require("./routes/reports");
 const refreshRoutes = require("./routes/refresh");
 
@@ -56,7 +56,7 @@ app.use("/api/user", userRoutes);
 // Post routes
 app.use("/api/post", postRoutes);
 // Comments router
-//app.use("/api/comments", commentRoutes);
+app.use("/api/comment", commentRoutes);
 // Reports router
 //app.use("/api/reports", reportsRoutes);
 
