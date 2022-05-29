@@ -182,7 +182,6 @@ exports.updateUser = (req, res) => {
 
         
         if (req.files) {
-          console.log(req.files.avatar)
           if (req.files.cover) {
             const oldCover = user.coverPicture.split("/images/covers/")[1];
             console.log("odlImage ", oldCover);
@@ -216,7 +215,7 @@ exports.updateUser = (req, res) => {
           }
         )
           .then(() => {
-            return res.status(200).json({ message: "Utilisateur modifié" }); // erase if todo is done.
+            return res.status(200).json({ "message": modifiedUser }); // erase if todo is done.
           })
           .catch((err) => {
             return res.status(400).json({ error: err.message });
