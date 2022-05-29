@@ -3,8 +3,10 @@ const multer = require("multer");
 const storage = multer.diskStorage({
   destination: (req, file, callback) => {
     if (file.fieldname === "avatar") { 
+      console.log("avatar");
       callback(null, 'images/persons');
     } else if (file.fieldname === "cover") { // else uploading image
+      console.log("cover");
       callback(null, 'images/covers');
     } else {
       console.log('pasando por images');

@@ -2,6 +2,7 @@ const Users = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { validation } = require("../helpers/validation");
 const ROLES_LIST = require("../utils/roles_list");
+const fs = require("fs");
 
 // Get all user from list. Information returned will depends on role.
 // [GET] http://localhost:3000/user
@@ -95,7 +96,6 @@ exports.getUserById = (req, res) => {
 // [PUT] http:localhost:3000/user/:id
 // Body Content Expected: {requestingUserId, user: {name?, lastName?, email?, password?, cover?, avatar?, state?, role?, bio? }}
 exports.updateUser = (req, res) => {
-  console.log("updating :", req.body);
 
   // Requester data
   const roleOfRequestingUser = req.role;
@@ -182,34 +182,30 @@ exports.updateUser = (req, res) => {
 
         
         if (req.files) {
-          if (req.files.cover[0]) {
-            const oldCover = user.coverPicture.split("/images/covers")[1];
-            const newCover = `${req.protocol}://${req.get("host")}/images/covers${
+          console.log(req.files.avatar)
+          if (req.files.cover) {
+            const oldCover = user.coverPicture.split("/images/covers/")[1];
+            console.log("odlImage ", oldCover);
+            const newCover = `${req.protocol}://${req.get("host")}/images/covers/${
               req.files.cover[0].filename
             }`;
             if (user.coverPicture) {
             // eliminar antigua imagen
-            fs.unlink(`images/covers${oldCover}`, () => {
-              // agregar la nueva url
-              modifiedUser.coverPicture = newCover;
-            });} else {
-              modifiedUser.coverPicture = newCover;
+            fs.unlinkSync(`images/covers/${oldCover}`);
             }
+            modifiedUser.coverPicture = newCover;
           }
           if (req.files.avatar) {
-            const oldAvatar = user.profilePicture.split("/images/persons")[1];
-            const newAvatar = `${req.protocol}://${req.get("host")}/images/persons${
-              req.files.avatar[0].filename
-            }`;
+            const oldAvatar = user.profilePicture.split("/images/persons/")[1];
+            console.log("OLDAVATAR: ", oldAvatar);
+            const newAvatar = `${req.protocol}://${req.get("host")}/images/persons/${
+              req.files.avatar[0].filename}`;
+              console.log("user profile picture ", user);
             if (user.profilePicture) {
             // eliminar antigua imagen
-            fs.unlink(`images/persons${oldAvatar}`, () => {
-              // agregar la nueva url
-              modifiedUser.profilePicture = newAvatar;
-            });}
-            else {
-              modifiedUser.profilePicture = newAvatar;
+            fs.unlinkSync(`images/persons/${oldAvatar}`);
             }
+            modifiedUser.profilePicture = newAvatar;
           }
         }
         console.log(modifiedUser);
