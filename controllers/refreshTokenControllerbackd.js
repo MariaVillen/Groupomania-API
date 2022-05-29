@@ -139,13 +139,12 @@ exports.refreshTokenHandler = async (req, res) => {
           }
         );
       } catch (err) {
-        res.status(500).json({ error: err.message + "at verify token" });
+        return res.status(500).json({ error: err.message + "at verify token" });
       }
     }
   } catch (err) {
     console.log(err);
-  } // try catch findOne token
+    return res.status(500).json({ error: err.message + "at verify token" });
+  } 
 
-  // Token found in DB
-  // Recover data from refreshToken
 };

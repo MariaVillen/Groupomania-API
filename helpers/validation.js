@@ -13,8 +13,10 @@ exports.validation = (() => {
   const isBoolean = new RegExp(/[0|1]/);
 
   const cleanWhiteSpace = (str) => {
+    console.log("limpiando espacios: ", str);
     const reg = /\s{2,}/;
     const newstr = str.replace(reg, " ").trim();
+    console.log(" luego : ", newstr);
     return newstr;
   };
 
@@ -55,7 +57,7 @@ exports.validation = (() => {
       }
     },
     cleanWhiteSpace: (str) => {
-      cleanWhiteSpace(str);
+      return cleanWhiteSpace(str);
     },
   };
 })();
