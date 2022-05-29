@@ -130,7 +130,7 @@ exports.updatePostById = async (req, res) => {
           )}/images/posts/${req.file.filename}`;
 
           // Getting old url
-          const oldFileName = foundPost.attachement.split("/images/posts/")[1];
+          const oldFileName = foundPost.attachement.split("/images/posts")[1];
 
           // Set object to update
           let infoToUpdate = req.body.content
