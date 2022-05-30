@@ -48,8 +48,17 @@ exports.addPost = (req, res) => {
 // Get all Posts
 // [GET]  http://localhost:3000/api/posts
 exports.getAllPosts = (req, res) => {
-  Posts.findAll({ include: Users, order: [["createdAt", "DESC"]] })
+  Posts.findAll( {
+    include: [
+      {
+      model: Users,
+      attributes: ["profilePicture", "coverPicture", "id", "bio", "name", "lastName"]
+      }
+    ],
+    order:  [["createdAt", "DESC"]]
+    })
     .then((data) => {
+      console.log(data);
       res.status(200).json(data);
     })
     .catch((err) => {
@@ -85,7 +94,12 @@ exports.getPostByUserId = (req, res) => {
   }
 
   Posts.findAll({
-    include: Users,
+    include: [
+      {
+      model: Users,
+      attributes: ["profilePicture", "coverPicture", "id", "bio", "name", "lastName"]
+      }
+    ],
     where: { userId: userOwner },
     order: [["createdAt", "DESC"]],
   })
