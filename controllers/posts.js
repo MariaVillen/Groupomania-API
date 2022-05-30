@@ -254,43 +254,25 @@ exports.postLikePost = (req, res) => {
   .catch((err)=>{
     return res.status(500).json({"error" : err.message});
   })
-      
-      //     Posts.removeUsers(Users, { through: { idUser: userLike }})
-      //     .then(() => {
-      //     // Décrement likes on Post
-      //         Posts.decrement(
-      //           { likes: 1 },
-      //           {
-      //             where: {
-      //               id: idPostLiked,
-      //             },
-      //           }
-      //         );
-      //         res.status(204).json("message", "Element supprimé");
-      //       })
-      //       .catch((err) => res.status(500).json({ DataBaseError: err.message }));
-      //   } else {
-      //     // UNLIKE
-      //     Posts.addUsers(Users, { through: { idUser: userLike, postId:idPostLiked }})
-      //       .then(() => {
-      //         // Décrement likes on Post
-      //         Posts.increment(
-      //           { likes: 1 },
-      //           {
-      //             where: {
-      //               id: idPostLiked,
-      //             },
-      //           }
-      //         );
-      //         res.status(204).json("message", "Element ajouté");
-      //       })
-
-
-      //   }
-      // }
-    //)
   }
 
+  exports.getUserLikePost = (req, res) =>{
+    console.log("he pasado por get llikes");
+    const isPostLiked = req.params.id
+    Posts.findByPk(isPostLiked)
+    .then( (post) => {
+      if (post) {
+        return post.hasUser(req.userId).then(
+          (result)=> 
+          res.status(200).json({"message": result}))
+      } else {
+        return res.status(404).json("message", "Publiaction non trouvée");
+      }
+    }
+    ).catch((err)=>{
+      res.status(500).json({"error": err.message});
+    })
+  }
 
 // Delete a post by id
 // [DELETE] http://localhost:3000/api/posts/:id
