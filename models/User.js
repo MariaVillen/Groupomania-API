@@ -1,21 +1,22 @@
-const { Sequelize } = require("sequelize");
+const { DataTypes } = require("sequelize");
 const sequelize = require("../utils/database");
 
 const Posts = require("./Post");
 const Reports = require("./Report");
 const Comments = require("./Comment");
 
+
 const Users = sequelize.define(
   "users",
   {
     id: {
-      type: Sequelize.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
       allowNull: false,
       primaryKey: true,
     },
     lastName: {
-      type: Sequelize.STRING,
+      type: DataTypes.STRING,
       allowNull: false,
       validate: {
         min: {
@@ -34,7 +35,7 @@ const Users = sequelize.define(
       },
     },
     name: {
-      type: Sequelize.STRING(100),
+      type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
         min: {
@@ -53,7 +54,7 @@ const Users = sequelize.define(
       },
     },
     email: {
-      type: Sequelize.STRING(100),
+      type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
         min: 7,
@@ -65,28 +66,28 @@ const Users = sequelize.define(
       unique: "email",
     },
     password: {
-      type: Sequelize.STRING(64),
+      type: DataTypes.STRING(64),
       allowNull: false,
       is: /^[0-9a-f]{64}$/i,
     },
     profilePicture: {
-      type: Sequelize.STRING,
+      type: DataTypes.STRING,
       defaultValue: "",
     },
     coverPicture: {
-      type: Sequelize.STRING,
+      type: DataTypes.STRING,
       defaultValue: "",
     },
     bio: {
-      type: Sequelize.TEXT,
+      type: DataTypes.TEXT,
       defaultValue: "",
     },
     isActive: {
-      type: Sequelize.TINYINT,
+      type: DataTypes.TINYINT,
       defaultValue: false,
     },
     role: {
-      type: Sequelize.DataTypes.ENUM("user", "admin"),
+      type: DataTypes.ENUM("user", "admin"),
       allowNull: false,
       defaultValue: "user",
       validate: {
@@ -106,10 +107,6 @@ Users.belongsToMany(Users, { as: "followingId",through: 'follows', foreignKey: '
 Users.hasMany(Posts)
 Posts.belongsTo(Users);
 
-// Like Posts
-Users.belongsToMany(Posts, { through: "likesPost", onDelete: "CASCADE" });
-Posts.belongsToMany(Users, { through: "likesPost", onDelete: "CASCADE" });
-
 // 1 user per comment but a user can make many comments.
 Users.hasMany(Comments);
 Comments.belongsTo(Users);
@@ -128,6 +125,9 @@ Comments.belongsToMany(Users, {
 // a reporta has 1 user but a lot of users can make a lot of reports
 Users.hasMany(Reports);
 Reports.belongsTo(Users);
+// Like Posts
+Users.belongsToMany(Posts, { through: "User_Like_Post"});
+Posts.belongsToMany(Users, { through: "User_Like_Post"});
 
 
 module.exports = Users;

@@ -198,53 +198,83 @@ exports.postLikePost = (req, res) => {
 
   // Find like
 
-    Posts.findOne({
-    where: {id: idPostLiked},
-    include: [{
-      model: Users,
-      through: {
-        where: {userId: userLike}
-      }
-    }]
-    }).then(
-      (like)=>{
-        if (like) {
+    Posts.findByPk(idPostLiked)
+    .then(
+      (post)=>{
+        console.log("POSTS? ", !!post);
+        if (post) {
           // LIKE
-          Posts.removeUsers(Users, { through: { idUser: userLike }})
-          .then(() => {
-          // Décrement likes on Post
-              Posts.decrement(
-                { likes: 1 },
-                {
-                  where: {
-                    id: idPostLiked,
-                  },
+          Users.findByPk(userLike).then(
+            (user)=> {
+
+            post.hasUser(user).then(
+              (isLiked) => {  
+                if (isLiked) {
+                  return post.removeUser(user).then((result)=>{
+
+                    Posts.decrement( { totalLikes: 1 },{  where: { id: idPostLiked }} ).then(
+                      (result)=>{
+                    console.log(result);
+                    return res.status(204).json({"message": result});
+                    })
+                  })
+
+                } else {
+                  return post.addUser(user)
+                  .then( ()=>{
+                    return Posts.increment( { totalLikes: 1 },{  where: { id: idPostLiked }} ) 
+                  })
+                  .then((result)=>{
+                      console.log(result);
+                      return res.status(200).json({"message": result});
+                    })
                 }
-              );
-              res.status(204).json("message", "Element supprimé");
-            })
-            .catch((err) => res.status(500).json({ DataBaseError: err.message }));
+              })
+            }
+          )
         } else {
-          // UNLIKE
-          Posts.addUsers(Users, { through: { idUser: userLike, postId:idPostLiked }})
-            .then(() => {
-              // Décrement likes on Post
-              Posts.increment(
-                { likes: 1 },
-                {
-                  where: {
-                    id: idPostLiked,
-                  },
-                }
-              );
-              res.status(204).json("message", "Element ajouté");
-            })
-
-
-        }
+          return res.status(404).json({"error": "Publication non trouvée"})
       }
-    )
-     .catch((err) => res.status(500).json({ DataBaseError: err.message }));
+    }
+  )
+  .catch((err)=>{
+    return res.status(500).json({"error" : err.message});
+  })
+      
+      //     Posts.removeUsers(Users, { through: { idUser: userLike }})
+      //     .then(() => {
+      //     // Décrement likes on Post
+      //         Posts.decrement(
+      //           { likes: 1 },
+      //           {
+      //             where: {
+      //               id: idPostLiked,
+      //             },
+      //           }
+      //         );
+      //         res.status(204).json("message", "Element supprimé");
+      //       })
+      //       .catch((err) => res.status(500).json({ DataBaseError: err.message }));
+      //   } else {
+      //     // UNLIKE
+      //     Posts.addUsers(Users, { through: { idUser: userLike, postId:idPostLiked }})
+      //       .then(() => {
+      //         // Décrement likes on Post
+      //         Posts.increment(
+      //           { likes: 1 },
+      //           {
+      //             where: {
+      //               id: idPostLiked,
+      //             },
+      //           }
+      //         );
+      //         res.status(204).json("message", "Element ajouté");
+      //       })
+
+
+      //   }
+      // }
+    //)
   }
 
 
