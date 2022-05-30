@@ -25,14 +25,17 @@ const Posts = sequelize.define(
     },
     totalComments: {
       type: DataTypes.INTEGER.UNSIGNED,
-      defaultValue: 0
+      defaultValue: 0,
     },
     createdAt: {
-    type: DataTypes.DATE,          
+      type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("createdAt").toLocaleString();
+      },
     },
     updatedAt: {
-    type: DataTypes.DATE,
-    }
+      type: DataTypes.DATE,
+    },
   },
   { paranoid: true }
 );

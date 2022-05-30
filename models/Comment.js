@@ -19,6 +19,15 @@ const Comments = sequelize.define(
       type: DataTypes.INTEGER.UNSIGNED,
       defaultValue: 0,
     },
+    createdAt: {
+      type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("createdAt").toLocaleString();
+      },
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+    },
   },
   { paranoid: true }
 );

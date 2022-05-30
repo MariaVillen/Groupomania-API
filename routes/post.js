@@ -11,6 +11,10 @@ const router = express.Router();
 //http:/localhost:3000/api/post
 router.get('/', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getAllPosts); 
 
+//http:/localhost:3000/api/post/topten
+router.get('/topten', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getAllPostsTopTen); 
+
+
 //http:/localhost:3000/api/post/:id
 router.get("/:id",isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getPostById);
 

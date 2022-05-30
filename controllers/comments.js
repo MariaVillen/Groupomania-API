@@ -212,6 +212,27 @@ exports.updateCommentById = (req, res) => {
 
 };
 
+
+
+exports.getUserLikeComment = (req, res) =>{
+  console.log("he pasado por get llikes");
+  const isCommentLiked = req.params.id
+  Comments.findByPk(isCommentLiked)
+  .then( (comment) => {
+    if (comment) {
+      return comment.hasUser(req.userId).then(
+        (result)=> 
+        res.status(200).json({"message": result}))
+    } else {
+      return res.status(404).json("message", "Publiaction non trouvée");
+    }
+  }
+  ).catch((err)=>{
+    res.status(500).json({"error": err.message});
+  })
+}
+
+
 //router.delete('/:id', postController.removeComment);
 exports.removeComment = (req, res) => {
 

@@ -1,8 +1,9 @@
 const Posts = require("../models/Post");
+const moment = require('moment');
 const Users = require("../models/User");
 const ROLES_LIST = require("../utils/roles_list");
 const fs = require("fs");
-const LikesPost = require("../models/User");
+const {Op} =require("sequelize");
 
 // Add a post
 // [POST] http://localhost:3000/api/posts/
@@ -59,6 +60,32 @@ exports.getAllPosts = (req, res) => {
     })
     .then((data) => {
       console.log(data);
+      res.status(200).json(data);
+    })
+    .catch((err) => {
+      res.status(500).json({ error: err.message });
+    });
+};
+
+exports.getAllPostsTopTen = (req, res) => {
+  let nowDate = moment().startOf('day').subtract(7, 'days').toDate();
+  Posts.findAll( {
+    include: [
+      {
+      model: Users,
+      attributes: ["profilePicture", "coverPicture", "id", "bio", "name", "lastName"]
+      }
+    ],
+    order:  [[ "totalComments", "DESC"]],
+    limit: 2,
+    where: {
+      createdAt: {
+          [Op.gt]: nowDate
+      }
+  },
+    })
+    .then((data) => {
+      console.log("DATA topten ", data);
       res.status(200).json(data);
     })
     .catch((err) => {
