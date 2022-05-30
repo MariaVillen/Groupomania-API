@@ -156,7 +156,61 @@ exports.updateCommentById = (req, res) => {
 };
 
 //router.post ('/:id/like', postController.postLikeComment); // User make a like, dislike
-exports.postLikeComment = (req, res) => {};
+  exports.postLikeComment = (req, res) => {
+    const idCommentLiked = parseInt(req.params.id);
+    const userLike = req.body.userId;
+    const requestingUser = req.userId;
+  
+    if (userLike !== requestingUser) {
+      return res.status(401).json({ error: "vous n'est pas authorisé" });
+    }
+  
+    // Find like
+  
+      Comments.findByPk(idCommentLiked)
+      .then(
+        (comment)=>{
+          if (comment) {
+            // LIKE
+            Users.findByPk(userLike).then(
+              (user)=> {
+  
+              comment.hasUser(user).then(
+                (isLiked) => {  
+                  if (isLiked) {
+                    return post.removeUser(user).then((result)=>{
+  
+                      Comments.decrement( { likes: 1 },{  where: { id: idCommentLiked }} ).then(
+                        (result)=>{
+                      console.log(result);
+                      return res.status(204).json({"message": result});
+                      })
+                    })
+  
+                  } else {
+                    return comment.addUser(user)
+                    .then( ()=>{
+                      return Comments.increment( { likes: 1 },{  where: { id: idCommentLiked }} ) 
+                    })
+                    .then((result)=>{
+                        console.log(result);
+                        return res.status(200).json({"message": result});
+                      })
+                  }
+                })
+              }
+            )
+          } else {
+            return res.status(404).json({"error": "Publication non trouvée"})
+        }
+      }
+    )
+    .catch((err)=>{
+      return res.status(500).json({"error" : err.message});
+    })
+
+
+};
 
 //router.delete('/:id', postController.removeComment);
 exports.removeComment = (req, res) => {
