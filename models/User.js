@@ -96,7 +96,17 @@ const Users = sequelize.define(
           msg: "Le role doit être admin ou user.",
         },
       },
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("createdAt").toLocaleString();
+      },
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
     }
+    
   },
   { paranoid: true }
 ); // soft delete

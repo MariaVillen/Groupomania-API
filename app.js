@@ -8,27 +8,23 @@ const userRoutes = require("./routes/user");
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/post");
 const commentRoutes = require("./routes/comments");
-//const reportsRoutes = require("./routes/reports");
 const refreshRoutes = require("./routes/refresh");
-
+//const reportsRoutes = require("./routes/reports");
 
 // Create express instance
 const app = express();
-
 
 // Parse Post Request
 app.use(express.json());
 
 // CORS authorisation
 app.use((req, res, next) => {
-  
   const origin = req.headers.origin;
 
   if (process.env.ORIGINS_ALLOWED.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
-    res.header("Access-Control-Allow-Credentials", true); // for cookies
+    res.header("Access-Control-Allow-Credentials", true);
   }
-  //res.setHeader("Access-Control-Allow-Origin", "*");
   res.header(
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
@@ -49,7 +45,7 @@ app.use(cookieParser());
 
 // User authentication
 app.use("/api/auth", authRoutes);
-// Refresh 
+// Refresh
 app.use("/api/refresh", refreshRoutes);
 // Post routes
 app.use("/api/user", userRoutes);
@@ -59,7 +55,6 @@ app.use("/api/post", postRoutes);
 app.use("/api/comment", commentRoutes);
 // Reports router
 //app.use("/api/reports", reportsRoutes);
-
 
 // Images Fixed Route
 app.use("/images", express.static(path.join(__dirname, "images")));

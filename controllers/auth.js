@@ -4,20 +4,18 @@ const { validation } = require("../helpers/validation");
 const Users = require("../models/User");
 const RefreshTokens = require("../models/refreshToken");
 const ROLES_LIST = require("../utils/roles_list");
-const Op = require("sequelize");
 
 // Sign Up new user
 // [POST] http:/localhost:3000/auth/signup
-// Body Content Expected: {email, password, name, lastName}
-
 exports.postSignUp = async (req, res) => {
+
   let { lastName, name, email, password } = req.body;
 
   // Verify all champs are completed
   if (!email || !password || !lastName || !name) {
     return res
       .status(400)
-      .json({ error: "Veuillez remplir l'ensemble des champs du formulaire." });
+      .json({ "error": "Veuillez remplir l'ensemble des champs du formulaire." });
   }
 
   // Champs validation
@@ -27,9 +25,7 @@ exports.postSignUp = async (req, res) => {
     lastName = validation.isName(lastName);
     name = validation.isName(name);
   } catch (err) {
-    console.log(err);
-
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json({ "error": err.message });
   }
 
   // Hashing password and creating user
@@ -41,20 +37,17 @@ exports.postSignUp = async (req, res) => {
       lastName: lastName,
       name: name,
     });
-
     res.status(201).json({
-      message: `Nouvel utilisateur ${newUser.name} ${newUser.lastName} créé.`,
-    });
+      "message": `Nouvel utilisateur ${newUser.name} ${newUser.lastName} créé.`,
+    }); 
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ "error": "Email déjà utilisé" });
   }
 };
 
 // Login user
 // [POST] http:/localhost:3000/auth/login
-// // Body Content Expected: {email, password}
 exports.postLogin = async (req, res) => {
-  
   // Recover email
   let { email, password } = req.body;
 
@@ -91,7 +84,7 @@ exports.postLogin = async (req, res) => {
       return res.status(401).json({ error: "Mot the passe incorrecte." });
     }
 
-    // The password is valid 
+    // The password is valid
     // Creating new tokens
 
     const accessToken = jwt.sign(
@@ -116,7 +109,6 @@ exports.postLogin = async (req, res) => {
 
     // Case: no cookies
     if (!cookies?.jwt) {
-
       // Save new refresh token to Db
       await RefreshTokens.create({
         token: newRefreshToken,
@@ -138,83 +130,77 @@ exports.postLogin = async (req, res) => {
         accessToken: accessToken,
       });
 
-
       // Case: cookies found
-  } else {
+    } else {
+      // In this moment we have a cookie and a user
+      // Get refreshToken from cookie
+      const refreshToken = cookies.jwt;
 
-    // In this moment we have a cookie and a user
+      // Erase old cookie
+      res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+      });
 
-    // Get refreshToken from cookie
-    const refreshToken = cookies.jwt;
-    
-    // Erase old cookie
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-    });
+      // Find token of cookie in DB
+      const foundToken = await RefreshTokens.findOne({ token: refreshToken });
 
-    // Find token of cookie in DB
-    const foundToken = await RefreshTokens.findOne({ token: refreshToken });
- 
+      // No token in DB but there is a cookie : REUSE SITUATION.
 
-    // No token in DB but there is a cookie : REUSE SITUATION.
+      if (!foundToken) {
+        // Extract data from the cookies token.
+        jwt.verify(
+          refreshToken,
+          process.env.REFRESH_TOKEN_SECRET,
+          async (err, decodedToken) => {
+            // Token is valid but not in db
+            if (decodedToken) {
+              // Destroy all refreshTokens of the user of the cookie
+              await RefreshTokens.destroy({
+                where: {
+                  userId: decodedToken.userId,
+                },
+              });
 
-    if (!foundToken) {
-
-      // Extract data from the cookies token.
-      jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET,
-        async (err, decodedToken) => {
-
-          // Token is valid but not in db
-          if (decodedToken) {
-
-            // Destroy all refreshTokens of the user of the cookie
-            await RefreshTokens.destroy({
-              where: {
-                userId: decodedToken.userId,
-              },
-            });
-
-            // Destroy all refreshTokens of the user logged.
-            await RefreshTokens.destroy({
-              where: {
-                userId: foundUser.id,
-              },
-            });}
+              // Destroy all refreshTokens of the user logged.
+              await RefreshTokens.destroy({
+                where: {
+                  userId: foundUser.id,
+                },
+              });
+            }
 
             // In all case send 403 (token not valid and not in db also)
             return res.sendStatus(403); // Forbidden;
-        }
-      );
-    }
+          }
+        );
+      }
 
-    // Cookie found in DB an there is a cookie
-    // Old token found, update and change it for the new refresh token
-    await foundToken.destroy();
+      // Cookie found in DB an there is a cookie
+      // Old token found, update and change it for the new refresh token
+      await foundToken.destroy();
 
-   await RefreshTokens.create({
-      token: newRefreshToken,
-      userId: foundUser.id,
-    });
+      await RefreshTokens.create({
+        token: newRefreshToken,
+        userId: foundUser.id,
+      });
 
-    // Send new cookies
-    res.cookie("jwt", newRefreshToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+      // Send new cookies
+      res.cookie("jwt", newRefreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
 
-    // Sent new access token
+      // Sent new access token
 
-    res.status(200).json({
-      userId: foundUser.id,
-      userRole: ROLES_LIST[foundUser.role],
-      accessToken: accessToken,
-    });
+      res.status(200).json({
+        userId: foundUser.id,
+        userRole: ROLES_LIST[foundUser.role],
+        accessToken: accessToken,
+      });
     }
   } catch (err) {
     console.log("user not found");

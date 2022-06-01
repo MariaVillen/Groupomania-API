@@ -5,7 +5,6 @@ const ROLES_LIST = require("../utils/roles_list");
 
 // router.post('/add', postController.addComment); // User add a Sauce to the DB
 // [POST] http://localhost:3000/comments/add
-// Body: {idUser: idOfRequesterUser, comment: { content, postId, userId}}
 exports.addComment = (req, res) => {
   const idOfRequesterUser = req.userId;
   const content = req.body.content;
@@ -21,7 +20,6 @@ exports.addComment = (req, res) => {
     userId: idOfRequesterUser,
   })
     .then((result) => {
-      console.log(result);
       Posts.increment(
         { totalComments: 1 },
         {
@@ -36,20 +34,9 @@ exports.addComment = (req, res) => {
     });
 };
 
-//router.get('/', postController.getAllComments);
-//TODO: necesario? Hacer si lo es
-exports.getAllComments = (req, res) => {
-  Comments.findAll({ include: [Users, Posts], order: [["createdAt", "DESC"]] })
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      res.status(401).send(err);
-    });
-};
 
-//TODO: Necesario? Hacer si lo es.
 //router.get("/:id", postController.getCommentById);
+//[GET] http://localhost:3000/comments/:id
 exports.getCommentById = (req, res) => {
   const userId = req.params.userId;
   if (!userId) {
@@ -66,6 +53,7 @@ exports.getCommentById = (req, res) => {
 };
 
 //router.get('/:userId', postController.getCommentsByUserId); // User add a Sauce to the DB
+//[GET] http://localhost:3000/comments/users/:id
 exports.getCommentByUserId = (req, res) => {
   const userId = req.params.userId;
 
@@ -87,6 +75,7 @@ exports.getCommentByUserId = (req, res) => {
 };
 
 //router.get('/:postId', commentController.getCommentByPost);
+//[POST] http://localhost:3000/comments/:id
 exports.getCommentByPost = (req, res) => {
   const postId = req.params.postId;
   if (!postId) {
@@ -104,7 +93,8 @@ exports.getCommentByPost = (req, res) => {
     });
 };
 
-//router.put('/:id', postController.updateCommentById);
+
+//[PUT] http://localhost:3000/comments/:id
 exports.updateCommentById = (req, res) => {
   const commentId = req.params.id;
   const content = req.body.content;
@@ -138,7 +128,7 @@ exports.updateCommentById = (req, res) => {
           return comment;
         }
       })
-      .then((comment) => {
+      .then(() => {
         Comments.update(
           { content },
           {
@@ -146,7 +136,7 @@ exports.updateCommentById = (req, res) => {
           }
         );
       })
-      .then((result) => {
+      .then(() => {
         return res.status(200).json({ Message: "Commentaire modifié" });
       })
       .catch((err) => {

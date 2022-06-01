@@ -4,7 +4,6 @@ dotenv.config();
 
 // Database
 const sequelize = require("./utils/database");
-
 const http = require("http");
 const app = require("./app");
 
@@ -26,7 +25,7 @@ const normalizePort = (val) => {
   return false;
 };
 
-const port = normalizePort(process.env.PORT || "3000");
+const port = normalizePort(process.env.PORT || "3500");
 app.set("port", port);
 
 /**
@@ -55,6 +54,7 @@ const errorHandler = (error) => {
   }
 };
 
+// Server
 const server = http.createServer(app);
 
 server.on("error", errorHandler);
@@ -66,7 +66,7 @@ server.on("listening", () => {
 
 // Syncronize models of DB
 sequelize
-  .sync({alter: true})
+  .sync({ alter: true })
   .then(() => {
     server.listen(port);
   })

@@ -8,32 +8,32 @@ const upload = require("../middleware/multer-config");
 
 const router = express.Router();
 
-//http:/localhost:3000/api/post
+//[GET]http:/localhost:3000/api/post
 router.get('/', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getAllPosts); 
 
-//http:/localhost:3000/api/post/topten
+//[GET]http:/localhost:3000/api/post/topten
 router.get('/topten', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getAllPostsTopTen); 
 
 
-//http:/localhost:3000/api/post/:id
+//[GET]http:/localhost:3000/api/post/:id
 router.get("/:id",isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getPostById);
 
-//http:/localhost:3000/api/post/user/:id
+//[GET]http:/localhost:3000/api/post/user/:id
 router.get("/user/:id", isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getPostByUserId);
 
-//http:/localhost:3000/api/post
+//[POST]http:/localhost:3000/api/post
 router.post("/", upload.single('image'), postController.addPost);
 
-//http:/localhost:3000/api/post/:id
+//[PUT]http:/localhost:3000/api/post/:id
 router.put('/:id', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), upload.single('image'),postController.updatePostById);
 
-//http:/localhost:3000/api/post/:id/like
+//[POST]http:/localhost:3000/api/post/:id/like
 router.post ('/:id/like', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.postLikePost); // User make a like, dislike
 
-//http:/localhost:3000/api/get/:id/like
+//[GET]http:/localhost:3000/api/get/:id/like
 router.get('/:id/like', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getUserLikePost);
 
-//http:/localhost:3000/api/post/:id
+//[DELETE]http:/localhost:3000/api/post/:id
 router.delete('/:id', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.removePost);
 
 

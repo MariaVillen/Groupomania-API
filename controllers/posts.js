@@ -1,13 +1,13 @@
 const Posts = require("../models/Post");
-const moment = require('moment');
+const moment = require("moment");
 const Users = require("../models/User");
 const ROLES_LIST = require("../utils/roles_list");
 const fs = require("fs");
-const {Op} =require("sequelize");
+const { Op } = require("sequelize");
+
 
 // Add a post
 // [POST] http://localhost:3000/api/posts/
-// Body Content Expected: {requestingUserId, post: {attachement?, content?, userId}} | {req.file}
 exports.addPost = (req, res) => {
   console.log(req.file, req.body);
 
@@ -49,15 +49,22 @@ exports.addPost = (req, res) => {
 // Get all Posts
 // [GET]  http://localhost:3000/api/posts
 exports.getAllPosts = (req, res) => {
-  Posts.findAll( {
+  Posts.findAll({
     include: [
       {
-      model: Users,
-      attributes: ["profilePicture", "coverPicture", "id", "bio", "name", "lastName"]
-      }
+        model: Users,
+        attributes: [
+          "profilePicture",
+          "coverPicture",
+          "id",
+          "bio",
+          "name",
+          "lastName",
+        ],
+      },
     ],
-    order:  [["createdAt", "DESC"]]
-    })
+    order: [["createdAt", "DESC"]],
+  })
     .then((data) => {
       console.log(data);
       res.status(200).json(data);
@@ -67,23 +74,32 @@ exports.getAllPosts = (req, res) => {
     });
 };
 
+// Get all Posts
+// [GET]  http://localhost:3000/api/posts/topten
 exports.getAllPostsTopTen = (req, res) => {
-  let nowDate = moment().startOf('day').subtract(7, 'days').toDate();
-  Posts.findAll( {
+  let nowDate = moment().startOf("day").subtract(7, "days").toDate();
+  Posts.findAll({
     include: [
       {
-      model: Users,
-      attributes: ["profilePicture", "coverPicture", "id", "bio", "name", "lastName"]
-      }
+        model: Users,
+        attributes: [
+          "profilePicture",
+          "coverPicture",
+          "id",
+          "bio",
+          "name",
+          "lastName",
+        ],
+      },
     ],
-    order:  [[ "totalComments", "DESC"]],
-    limit: 2,
+    order: [["totalComments", "DESC"]],
+    limit: 5,
     where: {
       createdAt: {
-          [Op.gt]: nowDate
-      }
-  },
-    })
+        [Op.gt]: nowDate,
+      },
+    },
+  })
     .then((data) => {
       console.log("DATA topten ", data);
       res.status(200).json(data);
@@ -123,9 +139,16 @@ exports.getPostByUserId = (req, res) => {
   Posts.findAll({
     include: [
       {
-      model: Users,
-      attributes: ["profilePicture", "coverPicture", "id", "bio", "name", "lastName"]
-      }
+        model: Users,
+        attributes: [
+          "profilePicture",
+          "coverPicture",
+          "id",
+          "bio",
+          "name",
+          "lastName",
+        ],
+      },
     ],
     where: { userId: userOwner },
     order: [["createdAt", "DESC"]],
@@ -224,14 +247,14 @@ exports.updatePostById = async (req, res) => {
   }
 };
 
-// TODO:
+
 // Like / dislike handler
 // [POST] http://localhost:3000/api/posts/:id/like
 exports.postLikePost = (req, res) => {
   const idPostLiked = parseInt(req.params.id);
   const userLike = req.body.userId;
   const requestingUser = req.userId;
-  console.log (idPostLiked, userLike, requestingUser);
+  console.log(idPostLiked, userLike, requestingUser);
 
   if (userLike !== requestingUser) {
     return res.status(401).json({ error: "vous n'est pas authorisé" });
@@ -239,129 +262,129 @@ exports.postLikePost = (req, res) => {
 
   // Find like
 
-    Posts.findByPk(idPostLiked)
-    .then(
-      (post)=>{
-        console.log("POSTS? ", !!post);
-        if (post) {
-          // LIKE
-          Users.findByPk(userLike).then(
-            (user)=> {
-
-            post.hasUser(user).then(
-              (isLiked) => {  
-                if (isLiked) {
-                  return post.removeUser(user).then((result)=>{
-
-                    Posts.decrement( { totalLikes: 1 },{  where: { id: idPostLiked }} ).then(
-                      (result)=>{
-                    console.log(result);
-                    return res.status(204).json({"message": result});
-                    })
-                  })
-
-                } else {
-                  return post.addUser(user)
-                  .then( ()=>{
-                    return Posts.increment( { totalLikes: 1 },{  where: { id: idPostLiked }} ) 
-                  })
-                  .then((result)=>{
-                      console.log(result);
-                      return res.status(200).json({"message": result});
-                    })
-                }
-              })
-            }
-          )
-        } else {
-          return res.status(404).json({"error": "Publication non trouvée"})
-      }
-    }
-  )
-  .catch((err)=>{
-    return res.status(500).json({"error" : err.message});
-  })
-  }
-
-  exports.getUserLikePost = (req, res) =>{
-    console.log("he pasado por get llikes");
-    const isPostLiked = req.params.id
-    Posts.findByPk(isPostLiked)
-    .then( (post) => {
+  Posts.findByPk(idPostLiked)
+    .then((post) => {
+      console.log("POSTS? ", !!post);
       if (post) {
-        return post.hasUser(req.userId).then(
-          (result)=> 
-          res.status(200).json({"message": result}))
+        // LIKE
+        Users.findByPk(userLike).then((user) => {
+          post.hasUser(user).then((isLiked) => {
+            if (isLiked) {
+              return post.removeUser(user).then((result) => {
+                Posts.decrement(
+                  { totalLikes: 1 },
+                  { where: { id: idPostLiked } }
+                ).then((result) => {
+                  console.log(result);
+                  return res.status(204).json({ message: result });
+                });
+              });
+            } else {
+              return post
+                .addUser(user)
+                .then(() => {
+                  return Posts.increment(
+                    { totalLikes: 1 },
+                    { where: { id: idPostLiked } }
+                  );
+                })
+                .then((result) => {
+                  console.log(result);
+                  return res.status(200).json({ message: result });
+                });
+            }
+          });
+        });
+      } else {
+        return res.status(404).json({ error: "Publication non trouvée" });
+      }
+    })
+    .catch((err) => {
+      return res.status(500).json({ error: err.message });
+    });
+};
+
+// Get Likes
+// [GET] http://localhost:3000/api/posts/:id/like
+exports.getUserLikePost = (req, res) => {
+  console.log("he pasado por get llikes");
+  const isPostLiked = req.params.id;
+  Posts.findByPk(isPostLiked)
+    .then((post) => {
+      if (post) {
+        return post
+          .hasUser(req.userId)
+          .then((result) => res.status(200).json({ message: result }));
       } else {
         return res.status(404).json("message", "Publiaction non trouvée");
       }
-    }
-    ).catch((err)=>{
-      res.status(500).json({"error": err.message});
     })
-  }
+    .catch((err) => {
+      res.status(500).json({ error: err.message });
+    });
+};
 
 // Delete a post by id
 // [DELETE] http://localhost:3000/api/posts/:id
 exports.removePost = (req, res) => {
-
   if (!req.params.id) {
-    res.status(400).json({'Error':'Requête erronée'});
+    res.status(400).json({ Error: "Requête erronée" });
   } else {
-
     const postToDelete = req.params.id;
     const requestingUser = req.userId;
     const roleOfRequestingUser = req.role;
 
-    Posts.findOne({where: {
-      id: postToDelete
-    }})
-    .then((post)=>{
+    Posts.findOne({
+      where: {
+        id: postToDelete,
+      },
+    })
+      .then((post) => {
+        if (!post) {
+          return res.status(404).json("Publication pas trouvée");
+        }
 
-      if (!post) {
-        return res.status(404).json("Publication pas trouvée");
-      } 
+        if (
+          post.userId === requestingUser ||
+          roleOfRequestingUser === ROLES_LIST.admin
+        ) {
+          if (post.attachement) {
+            //Delete old image
 
-      if ((post.userId === requestingUser) || roleOfRequestingUser ===ROLES_LIST.admin) {
-        if (post.attachement) {
-          //Delete old image
+            const filename = post.attachement.split("/images/posts")[1];
 
-          const filename = post.attachement.split("/images/posts")[1];
-
-          fs.unlink(`images/posts${filename}`, ()=> {
+            fs.unlink(`images/posts${filename}`, () => {
+              Posts.destroy({
+                where: {
+                  id: postToDelete,
+                },
+              })
+                .then(() => {
+                  res.status(200).json({ message: "Object supprimé" });
+                })
+                .catch((err) => {
+                  res.status(500).json({ DataBaseError: err.message });
+                });
+            });
+          } else {
             Posts.destroy({
               where: {
-                id: postToDelete
-              }
+                id: postToDelete,
+              },
             })
-            .then(()=>{
-              res.status(200).json({'message':'Object supprimé'});
-            })
-            .catch((err) => {
-              res.status(500).json({"DataBaseError": err.message});
-            })
-          })
-          
+              .then(() => {
+                res.status(200).json({ message: "Elément supprimé" });
+              })
+              .catch((err) => {
+                res.status(500).json({ DataBaseError: err.message });
+              });
+          }
         } else {
-
-          Posts.destroy({
-            where:{
-              id: postToDelete
-            }
-          })
-          .then(()=>{res.status(200).json({"message":"Elément supprimé"}
-          )})
-          .catch((err)=>{res.status(500).json({"DataBaseError": err.message})})
+          return res.status(401).json("Action non autorisée");
         }
-      } else {
-        return res.status(401).json("Action non autorisée");
-      }
-
-    })
-    .catch((err)=>{ res.status(500).json({"DataBaseError":err.message})});
-
-
+      })
+      .catch((err) => {
+        res.status(500).json({ DataBaseError: err.message });
+      });
   }
-
-
 };
