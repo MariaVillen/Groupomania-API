@@ -99,14 +99,13 @@ const Users = sequelize.define(
     },
     createdAt: {
       type: DataTypes.DATE,
-      get: function () {
-        return this.getDataValue("createdAt").toLocaleString();
-      },
+      // get: function () {
+      //   return this.getDataValue("createdAt").toLocaleString();
+      // },
     },
     updatedAt: {
       type: DataTypes.DATE,
     }
-    
   },
   { paranoid: true }
 ); // soft delete

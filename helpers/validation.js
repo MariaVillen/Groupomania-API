@@ -10,7 +10,6 @@ exports.validation = (() => {
   const isName = new RegExp(
     /^[A-Za-zàâçéèêëîïôûùüÿñæœ'](?:[A-Za-zàâçéèêëîïôûùüÿñæœ']+| {1}(?=[A-Za-zàâçéèêëîïôûùüÿñæœ']))+/
   ); // no white space at begining or end or more than one space between lettres
-  const isBoolean = new RegExp(/[0|1]/);
 
   const cleanWhiteSpace = (str) => {
     console.log("limpiando espacios: ", str);
@@ -45,15 +44,6 @@ exports.validation = (() => {
         return sanitizedStr;
       } else {
         throw new Error("Le nom ou prénom ne doivent pas avoir de nombres.");
-      }
-    },
-    isBoolean: (str) => {
-      const sanitizedStr = parseInt(str);
-      const isValid = isBoolean.test(sanitizedStr);
-      if (isValid) {
-        return sanitizedStr;
-      } else {
-        throw new Error("Le value doit etre 0 ou 1.");
       }
     },
     cleanWhiteSpace: (str) => {

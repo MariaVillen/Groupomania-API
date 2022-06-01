@@ -147,6 +147,6 @@ exports.refreshTokenHandler = async (req, res) => {
   })
   .catch((err)=> {
     console.log("este es el ultimo catche respuest 500L145"); 
-    res.status(500).json({"DataBaseError": err})
+    res.status(500).json({"DataBaseError": err.message})
   })
 }

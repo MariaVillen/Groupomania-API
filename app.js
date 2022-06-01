@@ -9,7 +9,7 @@ const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/post");
 const commentRoutes = require("./routes/comments");
 const refreshRoutes = require("./routes/refresh");
-//const reportsRoutes = require("./routes/reports");
+const reportsRoutes = require("./routes/reports");
 
 // Create express instance
 const app = express();
@@ -54,7 +54,7 @@ app.use("/api/post", postRoutes);
 // Comments router
 app.use("/api/comment", commentRoutes);
 // Reports router
-//app.use("/api/reports", reportsRoutes);
+app.use("/api/report", reportsRoutes);
 
 // Images Fixed Route
 app.use("/images", express.static(path.join(__dirname, "images")));

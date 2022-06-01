@@ -1,22 +1,19 @@
 const express = require("express");
 const isAuth = require("../middleware/is-auth");
 const verifyRoles =  require('../middleware/verify-roles');
-const reportController = require("../controllers/auth");
+const reportController = require("../controllers/reports");
 const ROLES_LIST = require('../utils/roles_list');
 
 const router = express.Router();
 
 //http:/localhost:3000/api/report
-router.get("/", isAuth, authRole([ROLES_LIST.admin]), reportController.getAllReports);
+router.get("/", isAuth, verifyRoles([ROLES_LIST.admin]), reportController.getAllReports);
 //http:/localhost:3000/api/report/:id
-router.get("/:id", isAuth, authRole([ROLES_LIST.admin]), reportController.getReportById);
-router.put("/:id", isAuth, authRole([ROLES_LIST.admin]), reportController.updateReport);
-router.delete("/:id", isAuth, authRole([ROLES_LIST.admin]), reportController.deleteReport);
+router.get("/:id", isAuth, verifyRoles([ROLES_LIST.admin]), reportController.getReportById);
 
-//http:/localhost:3000/api/report/post/:id
-router.post("/post/:id", isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), reportController.addReportOnPost);
+router.post("/", isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), reportController.addReport);
 
-//http:/localhost:3000/api/report/comment/:id
-router.post("/comment/:id", isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), reportController.addReportOnComment);
+router.put("/:id", isAuth, verifyRoles([ROLES_LIST.admin]), reportController.updateReport);
+router.delete("/:id", isAuth, verifyRoles([ROLES_LIST.admin]), reportController.deleteReport);
 
 module.exports = router;

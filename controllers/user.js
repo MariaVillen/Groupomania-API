@@ -97,6 +97,8 @@ exports.getUserById = (req, res) => {
 // Body Content Expected: {requestingUserId, user: {name?, lastName?, email?, password?, cover?, avatar?, state?, role?, bio? }}
 exports.updateUser = (req, res) => {
 
+  console.log("req body : " ,req.body);
+
   // Requester data
   const roleOfRequestingUser = req.role;
   const idOfRequestingUser = req.userId;
@@ -135,9 +137,10 @@ exports.updateUser = (req, res) => {
           newObjectToUpdate.email = validation.isEmail(req.body.email);
           console.log(newObjectToUpdate.email);
         }
-        if (req.body.isActive) {
-          newObjectToUpdate.isActive = validation.isBoolean(req.body.isActive);
-          console.log(newObjectToUpdate.isActive);
+        if (req.body.isActive === 1 || req.body.isActive === 0) {
+          newObjectToUpdate.isActive = req.body.isActive;
+        } else {
+          throw new Error("Le value doit etre 0 ou 1.");
         }
         if (req.body.role) {
           newObjectToUpdate.role = req.body.role;
@@ -262,4 +265,24 @@ exports.deleteUser = (req, res) => {
         "Vous devez être administrateur pour effacer la compte d'une autre personne",
     });
   }
+};
+
+
+// Get follows
+// [GET] http://localhost:3000/api/user/:id/follows
+exports.getUserFollows = (req, res) => {
+  const isUserFollower = req.params.id;
+  Users.findByPk(isUserFollower)
+    .then((user) => {
+      if (user) {
+        return user
+          .hasUser(isUserFollower)
+          .then((result) => res.status(200).json({ message: result }));
+      } else {
+        return res.status(404).json("message", "Users suivis non trouvés");
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ error: err.message });
+    });
 };
