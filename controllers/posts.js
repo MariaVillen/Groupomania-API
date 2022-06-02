@@ -11,6 +11,16 @@ const { Op } = require("sequelize");
 exports.addPost = (req, res) => {
   console.log(req.file, req.body);
 
+  // Verifications 
+  if (!req.body.userId) {
+    return res.status(400).json({"error":"Manque d'arguments (Id de l'utilisateur)"});
+  }
+
+  if (req.body.userId !== req.userId || req.roles !== ROLES_LIST.admin) {
+    return res.status(401).json({"error":"operation interdit"});
+  }
+
+
   let sentImageUrl;
 
   if (req.file) {
@@ -168,12 +178,17 @@ exports.updatePostById = async (req, res) => {
   const roleOfRequestingUser = req.role;
   const idOfRequestingUser = req.userId;
 
+
   if (!postToUpdate) {
     return res.status(400).json({ error: "Indiquez le id du post a modifier" });
   }
 
   try {
     const foundPost = await Posts.findByPk(postToUpdate);
+
+    if (foundPost.userId !== req.userId || req.roles !== ROLES_LIST.admin) {
+      return res.status(401).json({"error":"Pas de privileges nécessaires"});
+    }
 
     if (foundPost && (req.file || req.body.content)) {
       if (

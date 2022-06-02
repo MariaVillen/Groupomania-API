@@ -3,7 +3,7 @@ const ROLES_LIST = require("../utils/roles_list");
 const RefreshTokens = require("../models/RefreshToken");
 const Users = require("../models/User");
 const { Op } = require("sequelize");
-const { send } = require("express/lib/response");
+
 
 
 exports.refreshTokenHandler = async (req, res) => {
@@ -37,6 +37,7 @@ exports.refreshTokenHandler = async (req, res) => {
     },
     include: Users
   })
+
   // CASE TOKEN NOT FOUND IN DB
   .then( (foundToken) => {
     console.log("encontro el foundtoken? : ", foundToken.token);
@@ -97,7 +98,7 @@ exports.refreshTokenHandler = async (req, res) => {
   const newRefreshToken = jwt.sign(
     { userId: foundToken.userId },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "1d" }
+    { expiresIn: "50s" }                  // < ------------------ 1 day refresh token
   );
   // Create a new access token
   const accessToken = jwt.sign(
@@ -108,7 +109,7 @@ exports.refreshTokenHandler = async (req, res) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "30s" }                   // < ------------------ 15 minutes access token
   );
     console.log("hacemos el update del refresh token");
   RefreshTokens.update(
@@ -129,16 +130,18 @@ exports.refreshTokenHandler = async (req, res) => {
         httpOnly: true,
         sameSite: "none",
         secure: true,
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 50 * 1000,          // < ------------------ 1 day cookie
       })
 
         // Send new access token
         console.log("retornamos success 200");
+
       return res.status(200).json({
         userId: foundToken.userId,
         userRole: ROLES_LIST[foundToken.user.role],
         accessToken: accessToken,
       });
+      
     } else {
       console.log("retornamos error 400 L139");
       return res.status(400).json({"error": "Can't update"});
