@@ -98,7 +98,7 @@ exports.refreshTokenHandler = async (req, res) => {
   const newRefreshToken = jwt.sign(
     { userId: foundToken.userId },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "50s" }                  // < ------------------ 1 day refresh token
+    { expiresIn: "1d" }                  // < ------------------ 1 day refresh token
   );
   // Create a new access token
   const accessToken = jwt.sign(
@@ -109,7 +109,7 @@ exports.refreshTokenHandler = async (req, res) => {
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "30s" }                   // < ------------------ 15 minutes access token
+    { expiresIn: "15m" }                   // < ------------------ 15 minutes access token
   );
     console.log("hacemos el update del refresh token");
   RefreshTokens.update(
@@ -130,7 +130,7 @@ exports.refreshTokenHandler = async (req, res) => {
         httpOnly: true,
         sameSite: "none",
         secure: true,
-        maxAge: 50 * 1000,          // < ------------------ 1 day cookie
+        maxAge: 24 * 60 * 60 * 1000,          // < ------------------ 1 day cookie
       })
 
         // Send new access token

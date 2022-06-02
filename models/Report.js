@@ -13,8 +13,8 @@ const Reports = sequelize.define("reports", {
     allowNull: false,
   },
   state: {
-    type: DataTypes.ENUM("Non lu", "En cours", "Accepté", "Rejeté"),
-    default: "Non lu"
+    type: DataTypes.ENUM("Non lu", "En cours", "Accepté", "Rejeté", "Archivé"),
+    defaultValue: "Non lu"
   }
 });
 

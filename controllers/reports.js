@@ -4,8 +4,23 @@ const Comments = require("../models/Comment");
 const Reports = require("../models/Report");
 
 // Get all the reports
-// [GET] http://localhost:3000/reports
-exports.getAllReports = (req, res) => {};
+// [GET] http://localhost:3000/report
+exports.getAllReports = (req, res) => {
+    
+    Reports.findAll({ include: [
+                {model: Comments,
+                attributes: ["postId"] },
+                {model: Users,
+                attributes: ["profilePicture", "name"]}
+            ]
+            })
+    .then((result)=>{
+            return res.status(200).json(result);
+    })
+    .catch((err)=>{
+        return res.status(500).json({"error":err.message});
+    })        
+};
 
 // Get one report by id
 // [GET] http://localhost:3000/report/:id
@@ -13,7 +28,26 @@ exports.getReportById = (req, res) => {};
 
 // Change the state of a report
 // [PUT] http://localhost:3000/report/:id
-exports.updateReport = (req, res) => {};
+exports.updateReport = (req, res) => {
+    const reportId = req.params.id;
+    const state = req.body.state;
+    const options = ["Non lu", "En cours", "Accepté", "Rejeté", "Archivé"];
+
+    if (!options.includes(state)){
+        return res.status(400).json({"error":"Les états acceptés sont Non lu, En cours, Accepté, Rejeté, Archivé"});
+    }
+
+    Reports.update({state: state}, {where : {
+        id: reportId
+    }}).then(
+        ()=>{
+               return res.status(200).json({"message":"Report state updated"});
+        }
+    ).catch((err)=>{
+        return res.status(500).json({"error":err.message});
+    })
+    
+};
 
 // Remove a post by Id
 // [DELETE] http://localhost:3000/report/:id

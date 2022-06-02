@@ -95,13 +95,13 @@ exports.postLogin = async (req, res) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "30s" }             // < ------------------ 15 min refresh token
+      { expiresIn: "15m" }             // < ------------------ 15 min refresh token
     );
 
     const newRefreshToken = jwt.sign(
       { userId: foundUser.id },
       process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "50s" }             // < ------------------ 1 day refresh token
+      { expiresIn: "1d" }             // < ------------------ 1 day refresh token
     );
 
     // Cookies verification
@@ -120,7 +120,7 @@ exports.postLogin = async (req, res) => {
         httpOnly: true,
         sameSite: "none",
         secure: true,
-        maxAge: 50 * 1000, // < ------------------ 1 day cookie
+        maxAge: 24 * 60 * 60 * 1000, // < ------------------ 1 day cookie
       });
 
       // Send new access token
