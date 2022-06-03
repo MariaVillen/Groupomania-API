@@ -61,7 +61,11 @@ exports.getUserById = (req, res) => {
   // USER OWNER PERMISSION: If user is asking for his own information
 
   if (idOfRequestingUser === userToGet) {
-    Users.findOne({ where: { id: userToGet } })
+    Users.findOne({ where: { id: userToGet },
+    include: [{
+      model: Users,
+      as: "follows"
+    }]})
       .then((data) => {
         return res.status(200).json(data);
       })
@@ -82,8 +86,12 @@ exports.getUserById = (req, res) => {
     Users.findOne({
       where: { id: userToGet },
       attributes: { exclude: excludedInfo },
-    })
+      include: [{
+        model: Users,
+        as: "follows"
+      }]})
       .then((data) => {
+        console.log("USER BY ID: ", data);
         res.status(200).json(data);
       })
       .catch((err) => {
@@ -267,19 +275,68 @@ exports.deleteUser = (req, res) => {
   }
 };
 
+// Handle Follows
+// [POST] http://localhost:3500/api/user/:id/follow
+
+exports.postFollowsHandler = (req, res) =>{
+
+  const userFollowed = parseInt(req.params.id);
+  const userFollower = req.userId;
+
+  console.log("paso por followerrs");
+  if (userFollowed === userFollower) {
+    return res.status(400).json({ error: "Vous en pouvez pas vous suivre a vous même" });
+  }
+  if(!userFollowed) {
+    return res.status(400).json({ error: "Manque de parametres" });
+  }
+
+  // Find 
+
+  Users.findByPk(userFollowed)
+    .then((followed) => {
+      if (followed) {
+        // LIKE
+        Users.findByPk(userFollower).then((follower) => {
+          follower.hasFollows(followed).then((isFollowing) => {
+            if (isFollowing) {
+              return follower.removeFollows(followed).then((result) => {
+                  console.log(result);
+                  return res.status(204).json({ message: result });
+              });
+            } else {
+              return follower
+                .addFollows(followed)
+                .then((result) => {
+                  console.log(result);
+                  return res.status(200).json({ message: result });
+                });
+            }
+          });
+        });
+      } else {
+        return res.status(404).json({ error: "Utilisateur Non trouvé" });
+      }}
+    )
+    .catch((err) => {
+      return res.status(500).json({ error: err.message });
+    })
+};
 
 // Get follows
 // [GET] http://localhost:3000/api/user/:id/follows
 exports.getUserFollows = (req, res) => {
-  const isUserFollower = req.params.id;
-  Users.findByPk(isUserFollower)
-    .then((user) => {
-      if (user) {
-        return user
-          .hasUser(isUserFollower)
-          .then((result) => res.status(200).json({ message: result }));
+  const userFollowed = req.params.id;
+  const userFollower = req.userId;
+
+  Users.findByPk(userFollower)
+    .then((userWhoFollow) => {
+      if (userWhoFollow) {
+        return userWhoFollow
+          .getFollows()
+          .then((result) => res.status(200).json(result));
       } else {
-        return res.status(404).json("message", "Users suivis non trouvés");
+        return res.status(404).json("message", "Utilisateur non trouvé");
       }
     })
     .catch((err) => {

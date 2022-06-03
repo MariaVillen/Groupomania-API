@@ -120,16 +120,35 @@ exports.getAllPostsTopTen = (req, res) => {
 };
 
 // Get Posts By Id
-// [GET] http://localhost:3000/api/posts/:id
+// [GET] http://localhost:3000/api/post/:id
 exports.getPostById = (req, res) => {
+  console.log("entro en get post by id");
   const postToGet = req.params.id;
   // Verify if the user id exists in the params of the GET request.
   if (!postToGet) {
     return res.status(400).json({ error: "Indiquez l'id de l'utilisateur" });
   }
 
-  Posts.findOne({ where: { id: postToGet } })
-    .then((data) => {
+  Posts.findOne( 
+    { where:{
+    id: postToGet
+    },
+    include: [
+      {
+        model: Users,
+        attributes: [
+          "profilePicture",
+          "coverPicture",
+          "id",
+          "bio",
+          "name",
+          "lastName",
+        ]
+      }
+    ]
+  })
+  .then((data) => {
+      console.log(data);
       res.status(200).json(data);
     })
     .catch((err) => {

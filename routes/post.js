@@ -30,7 +30,7 @@ router.put('/:id', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), uplo
 //[POST]http:/localhost:3000/api/post/:id/like
 router.post ('/:id/like', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.postLikePost); // User make a like, dislike
 
-//[GET]http:/localhost:3000/api/get/:id/like
+//[GET]http:/localhost:3000/api/post/:id/like
 router.get('/:id/like', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getUserLikePost);
 
 //[DELETE]http:/localhost:3000/api/post/:id

@@ -111,7 +111,7 @@ const Users = sequelize.define(
 ); // soft delete
 
 
-Users.belongsToMany(Users, { as: "followingId",through: 'follows', foreignKey: 'followingId', otherKey: 'followedId' })
+Users.belongsToMany(Users, { as: "follows", through: 'User_Follow_User', foreignKey: 'followingId', otherKey: 'followedId' })
 // 1 user per Post but a User can have many posts.
 Users.hasMany(Posts)
 Posts.belongsTo(Users);

@@ -44,6 +44,10 @@ router.delete(
 );
 
 // [GET] http://localhost:3000/api/user/:id/follows
-router.get('/user/:id/follows', isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), userController.getUserFollows);
+router.get('/:id/follows', isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), userController.getUserById);
+
+// [POST] http://localhost:3500/api/user/:id/follows
+router.post('/:id/follows', isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), userController.postFollowsHandler);
+
 
 module.exports = router;
