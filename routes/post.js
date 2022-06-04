@@ -11,7 +11,7 @@ const postController = require("../controllers/posts");
 const router = express.Router();
 
 // [POST] http:/localhost:3500/api/post
-router.post("/", upload.single('image'), postController.addPost);
+router.post("/",isAuth, upload.single('image'), postController.addPost);
 
 // [GET] http:/localhost:3500/api/post
 router.get('/', isAuth, verifyRoles([ROLES_LIST.user,ROLES_LIST.admin]), postController.getAllPosts); 

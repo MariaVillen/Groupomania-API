@@ -12,13 +12,18 @@ const Users = require("../models/User");
 // [POST] http:/localhost:3500/api/post
 exports.addPost = (req, res) => {
 
+
   // Verifications 
   if ( !req.body.userId ) {
     return res.status( 400 ).json({ "error":"Manque d'arguments (Id de l'utilisateur)" });
   }
 
-  if ( req.body.userId !== req.userId || req.roles !== ROLES_LIST.admin ) {
-    return res.status( 401 ).json({ "error":"operation interdit" });
+  const userOwner = parseInt(req.body.userId);
+
+  if ( userOwner !== req.userId && req.roles !== ROLES_LIST.admin ) {
+    console.log("POST USER ", userOwner ,  " " , typeof userOwner, " REQUESTINGUSER ", req.userId, " ", typeof req.userId);
+    console.log("condicion ",  userOwner !== req.userId);
+    return res.status( 401 ).json({ "error": "operation interdit" });
   }
 
   let sentImageUrl;
@@ -40,7 +45,7 @@ exports.addPost = (req, res) => {
     Posts.create({
       attachement: sentImageUrl,
       content: req.body.content,
-      userId: req.body.userId,
+      userId: userOwner,
     })
     .then( () => {
       return res.status( 200 ).json({ "message": "Publication ajoutée!" });

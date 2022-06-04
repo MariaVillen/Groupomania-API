@@ -190,6 +190,7 @@ exports.postLogin = async (req, res) => {
       });
     }
   } catch ( err ) {
+    console.log("error", err);
     return res.status(500).json({"DataBaseError" : err.message });
   }
 };
@@ -238,6 +239,7 @@ exports.postLogout = async (req, res) => {
       return res.sendStatus( 204 ); //Ok but no content to send}
     }
   } catch ( err ) {
+    console.log("error", err);
     return res.status( 500 ).json({ "error" : err.message });
   }
 };

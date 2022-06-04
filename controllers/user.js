@@ -13,6 +13,7 @@ exports.getAllUsers = (req, res) => {
 
   // Get the role of the requesting user.
   const roleOfRequestingUser = req.role;
+  const idOfRequestingUser = req.userId;
 
   // ADMIN OWNER PERMISSION ONLY: Visible content only for admins.
   if (roleOfRequestingUser === ROLES_LIST.admin) {
@@ -38,7 +39,7 @@ exports.getAllUsers = (req, res) => {
       order: [[ "createdAt", "DESC" ]],
       where: {
         isActive: 1,
-        id: { [ Op.not ]: idOfRequestingUser }
+        /*id: { [ Op.not ]: idOfRequestingUser }*/
       },
     })
     .then((data) => {
@@ -71,12 +72,8 @@ exports.getUserById = (req, res) => {
 
   if (idOfRequestingUser === userToGet) {
 
-    Users.findOne({
-      where: { id: userToGet },
-      include: [{
-        model: Users,
-        as: "follows"
-      }]
+    Users.findByPk(userToGet, { 
+       attributes: ["id", "name", "lastName", "coverPicture", "profilePicture", "bio"]
     })
     .then(( data ) => {
       return res.status( 200 ).json( data );
@@ -268,17 +265,17 @@ exports.deleteUser = (req, res) => {
   }
 
   const roleOfRequestingUser = req.role;
-  const idOfRequestingUser = req.userIdReq;
+  const idOfRequestingUser = req.userId;
 
   // ADMIN OR USER OWNER PERMISSION ONLY.
   if (
     roleOfRequestingUser === ROLES_LIST.admin ||
-    idOfRequestingUser === userToDelte
+    idOfRequestingUser === userToDelete
   ) {
 
     Users.destroy({
       where: {
-        idUsers: userToDelete,
+        id: userToDelete,
       },
     })
     .then(() => {

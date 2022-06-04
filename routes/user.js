@@ -29,6 +29,6 @@ router.delete("/:id",isAuth,verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]),use
 router.post('/:id/follows', isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), userController.postFollowsHandler);
 
 // [GET] http://localhost:3500/api/user/:id/follows
-router.get('/:id/follows', isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), userController.getUserById);
+router.get('/:id/follows', isAuth, verifyRoles([ROLES_LIST.user, ROLES_LIST.admin]), userController.getUserFollows);
 
 module.exports = router;

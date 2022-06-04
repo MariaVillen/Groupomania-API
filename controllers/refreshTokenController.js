@@ -40,14 +40,14 @@ exports.refreshTokenHandler = async (req, res) => {
   // CASE TOKEN NOT FOUND IN DB
   .then( ( foundToken ) => {
 
-    console.log("encontro el foundtoken? : ", foundToken.token);
+    console.log("encontro el foundtoken? : ", foundToken?.token);
 
     if ( !foundToken ) {
 
       // reuse situation
       res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
 
-      console.log(" UserId establecemos a quien borramos. Cookie: ", cookieTokenDecoded.userId, " BD: ", foundToken.userId, " resultado: ", userId);
+      console.log(" UserId establecemos a quien borramos. Cookie: ", cookieTokenDecoded?.userId, " BD: ", foundToken?.userId, " resultado: ");
       
       const userId = ( cookieTokenDecoded ) ? cookieTokenDecoded.userId : foundToken.userId;
 
@@ -93,6 +93,7 @@ exports.refreshTokenHandler = async (req, res) => {
       return res.sendStatus( 403 )})
     .catch( ( err )=> { 
       console.log("enviamos 500 2othen l85"); 
+      console.log("error", err);
       return res.status( 500 ).json({ "DataBaseError": err.message} )})
     } 
     return foundToken;
@@ -158,7 +159,8 @@ exports.refreshTokenHandler = async (req, res) => {
   })
   })
   .catch( ( err )=> {
-    console.log("este es el ultimo catche respuest 500L145"); 
+    console.log("error", err);
+    console.log("este es el ultimo catche respuest 500L145", err); 
     return res.status( 500 ).json({ "DataBaseError": err.message })
   })
 }
