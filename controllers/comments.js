@@ -3,15 +3,18 @@ const Users = require("../models/User");
 const Comments = require("../models/Comment");
 const ROLES_LIST = require("../utils/roles_list");
 
-// router.post('/add', postController.addComment); // User add a Sauce to the DB
-// [POST] http://localhost:3000/comments/add
+
+// Add a comment
+// [POST] http://localhost:3500/comment/add
+
 exports.addComment = (req, res) => {
+
   const idOfRequesterUser = req.userId;
   const content = req.body.content;
   const postId = req.body.postId;
 
-  if (!content || !postId) {
-    res.status(400).json({ error: "Eléments manquantes" });
+  if ( !content || !postId ) {
+    return res.status( 400 ).json({ "error": "Eléments manquantes" });
   }
   // Get comment text, userId Author, post Id of the comment.
   Comments.create({
@@ -19,265 +22,199 @@ exports.addComment = (req, res) => {
     postId: postId,
     userId: idOfRequesterUser,
   })
-    .then((result) => {
-      Posts.increment(
-        { totalComments: 1 },
-        {
-          where: { id: postId },
-        }
-      ).then(() => {
-        res.status(200).send(`${JSON.stringify(result)} Created!`);
-      });
-    })
-    .catch((err) => {
-      res.status(400).send(err.message);
+  .then( ( result ) => {
+    Posts.increment(
+      { totalComments: 1 },
+      { where: { id: postId } }
+    ).then( () => {
+      return res.status( 200 ).json({"message": result});
     });
-};
-
-
-//router.get("/:id", postController.getCommentById);
-//[GET] http://localhost:3000/comments/:id
-exports.getCommentById = (req, res) => {
-  const userId = req.params.userId;
-  if (!userId) {
-    return res.status(400).json({ error: "Indiquez l'id de l'utilisateur" });
-  }
-
-  Comments.findOne({ where: { idComment: req.params.id } })
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      res.status(401).send(err);
-    });
-};
-
-//router.get('/:userId', postController.getCommentsByUserId); // User add a Sauce to the DB
-//[GET] http://localhost:3000/comments/users/:id
-exports.getCommentByUserId = (req, res) => {
-  const userId = req.params.userId;
-
-  if (!userId) {
-    return res.status(400).json({ error: "Indiquez l'id de l'utilisateur" });
-  }
-
-  Comments.findAll({
-    include: Comments,
-    where: { userId: userId },
-    order: ["createdAt", "DESC"],
   })
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      res.status(401).send(err);
-    });
+  .catch( ( err ) => {
+    return res.status( 400 ).json({"error": err.message });
+  });
 };
 
-//router.get('/:postId', commentController.getCommentByPost);
-//[POST] http://localhost:3000/comments/:id
+// Get all the comments of a post.
+// [POST] http://localhost:3500/comment/:id
 exports.getCommentByPost = (req, res) => {
+
   const postId = req.params.postId;
-  if (!postId) {
-    return res.status(400).json({ error: "Indiquez l'id de la publication" });
+
+  if ( !postId ) {
+    return res.status( 400 ).json({ "error": "Indiquez l'id de la publication" });
   }
+
   Comments.findAll({
-    include: [Users],
+    include: [ Users ],
     where: { postId: postId },
   })
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      res.status(401).send(err);
-    });
+  .then( ( data ) => {
+    return res.status( 200 ).json( data );
+  })
+  .catch( ( err ) => {
+    return res.status(500).json({ "error": err.message });
+  });
 };
 
-
-//[PUT] http://localhost:3000/comments/:id
+// Modify a comment
+// [PUT] http://localhost:3500/comment/:id
 exports.updateCommentById = (req, res) => {
+
   const commentId = req.params.id;
   const content = req.body.content;
   const requiringRole = req.role;
   const requestingUser = req.userId;
 
-  if (!content || !commentId) {
-    return res.status(400).json({ Error: "Parametres manquantes." });
+  if ( !content || !commentId ) {
+    return res.status( 400 ).json({ "error": "Parametres manquantes." });
   } else {
-    Comments.findByPk(commentId)
-      .then((comment) => {
-        if (!comment) {
-          return res.status(400).json({ error: "parametres manquantes" });
-        } else if (
-          requestingUser !== comment.userId ||
-          requiringRole !== ROLES_LIST.admin
-        ) {
-          return res.status(401).json({ error: "Sans privileges" });
-        } else {
-          return comment;
-        }
-      })
-      .then((comment) => {
-        // Verify if it is admin or a user who updates his own comment.
-        if (
-          req.role !== ROLES_LIST.admin ||
-          requestingUser !== comment.userId
-        ) {
-          return res.status(401).json({ error: "Action non autorisée" });
-        } else {
-          return comment;
-        }
-      })
-      .then(() => {
-        Comments.update(
-          { content },
-          {
-            where: { id: commentId },
-          }
-        );
-      })
-      .then(() => {
-        return res.status(200).json({ Message: "Commentaire modifié" });
-      })
-      .catch((err) => {
-        return res.status(500).json({ DataBaseError: err.message });
-      });
-  }
-};
-
-//router.post ('/:id/like', postController.postLikeComment); // User make a like, dislike
-  exports.postLikeComment = (req, res) => {
-    const idCommentLiked = parseInt(req.params.id);
-    const userLike = req.body.userId;
-    const requestingUser = req.userId;
-  
-    if (userLike !== requestingUser) {
-      return res.status(401).json({ error: "vous n'est pas authorisé" });
-    }
-  
-    // Find like
-  
-      Comments.findByPk(idCommentLiked)
-      .then(
-        (comment)=>{
-          if (comment) {
-            // LIKE
-            Users.findByPk(userLike).then(
-              (user)=> {
-  
-              comment.hasUser(user).then(
-                (isLiked) => {  
-                  if (isLiked) {
-                    return post.removeUser(user).then((result)=>{
-  
-                      Comments.decrement( { likes: 1 },{  where: { id: idCommentLiked }} ).then(
-                        (result)=>{
-                      console.log(result);
-                      return res.status(204).json({"message": result});
-                      })
-                    })
-  
-                  } else {
-                    return comment.addUser(user)
-                    .then( ()=>{
-                      return Comments.increment( { likes: 1 },{  where: { id: idCommentLiked }} ) 
-                    })
-                    .then((result)=>{
-                        console.log(result);
-                        return res.status(200).json({"message": result});
-                      })
-                  }
-                })
-              }
-            )
-          } else {
-            return res.status(404).json({"error": "Publication non trouvée"})
-        }
+    Comments.findByPk( commentId )
+    .then( ( comment ) => {
+      if ( !comment ) {
+        return res.status( 400 ).json({ "error": "parametres manquantes" });
+      } else if ( requestingUser !== comment.userId || requiringRole !== ROLES_LIST.admin) {
+        return res.status( 401 ).json({ "error": "Sans privileges" });
+      } else {
+        return comment;
       }
-    )
-    .catch((err)=>{
-      return res.status(500).json({"error" : err.message});
     })
-
-
+    .then((comment) => {
+        // Verify if it is admin or a user who updates his own comment.
+      if ( req.role !== ROLES_LIST.admin || requestingUser !== comment.userId) {
+          return res.status(401).json({ error: "Action non autorisée" });
+      } else {
+        return comment;
+      }
+    })
+    .then(() => {
+      Comments.update({ content },
+        { where: { id: commentId } }
+      );
+    })
+    .then(() => {
+      return res.status( 200 ).json({ "message": "Commentaire modifié" });
+    })
+    .catch( ( err ) => {
+      return res.status( 500 ).json({ "DataBaseError": err.message });
+    });
+  }
 };
 
 
+// Add like or unlike a comment
+// [POST] http://localhost:3500/comment/:id/like
+exports.postLikeComment = (req, res) => {
 
-exports.getUserLikeComment = (req, res) =>{
-  console.log("he pasado por get llikes");
-  const isCommentLiked = req.params.id
-  Comments.findByPk(isCommentLiked)
-  .then( (comment) => {
-    if (comment) {
-      return comment.hasUser(req.userId).then(
-        (result)=> 
-        res.status(200).json({"message": result}))
-    } else {
-      return res.status(404).json("message", "Publiaction non trouvée");
-    }
+  const idCommentLiked = parseInt( req.params.id );
+  const userLike = req.body.userId;
+  const requestingUser = req.userId;
+  
+  if ( userLike !== requestingUser ) {
+    return res.status(401).json({ error: "vous n'est pas authorisé" });
   }
-  ).catch((err)=>{
-    res.status(500).json({"error": err.message});
+  
+  // Find like
+    Comments.findByPk( idCommentLiked )
+    .then( ( comment ) => {
+      if ( comment ) {
+ 
+        Users.findByPk( userLike )
+        .then( ( user ) => {
+          comment.hasUser( user )
+          .then( ( isLiked ) => {  
+            if ( isLiked ) {
+              return post.removeUser( user )
+              .then( () => {
+                Comments.decrement( { likes: 1 },{  where: { id: idCommentLiked }} )
+                .then( (result)=>{
+                  return res.status(200).json({"message": result});
+                })
+              })
+  
+            } else {
+              return comment.addUser( user )
+              .then( () => {
+                return Comments.increment( { likes: 1 },{  where: { id: idCommentLiked }})
+              })
+              .then( ( result ) => {
+                return res.status(200).json({ "message": result })
+              })
+            }
+          })
+        })
+
+      } else {
+        return res.status( 404 ).json({ "error": "Publication non trouvée" })
+      }
+    })
+    .catch( ( err ) => {
+      return res.status( 500 ).json({ "error" : err.message });
+    })
+};
+
+// Verify if a user has liked a comment
+// [GET] http://localhost:3500/comment/:id/like
+exports.getUserLikeComment = (req, res) =>{
+
+  const isCommentLiked = req.params.id
+  Comments.findByPk( isCommentLiked )
+  .then( ( comment ) => {
+    if ( comment ) {
+      return comment.hasUser( req.userId )
+      .then( ( result ) => {
+        return res.status(200).json({"message": result})
+      })
+    } else {
+      return res.status( 404 ).json({ "message": "Publiaction non trouvée" });
+    }
+  })
+  .catch( ( err ) => {
+    return res.status( 500 ).json({ "error": err.message });
   })
 }
 
-
-//router.delete('/:id', postController.removeComment);
+// Delete a comment
+// [DELETE] http://localhost:3500/comment/:id
 exports.removeComment = (req, res) => {
 
   const commentId = req.params.id;
   const role = req.userRole;
   const userRequester = req.userId;
 
-  console.log("hola soy remove comment");
-
-  if (!commentId) {
-    return res.status(400).json({ Error: "Indiquez l'id de l'utilisateur" });
+  if ( !commentId ) {
+    return res.status( 400 ).json({ "error": "Indiquez l'id de l'utilisateur" });
   } else {
     Comments.findOne({ where: { id: commentId } })
-    .then((comment) => {
-      if (!comment) {
-        return res
-          .status(404)
-          .json({ error: "Le commentaire n'esxiste pas" });
-          // Verify if it is admin or a user who deletes his own comment.
-      } else if (
-        role === ROLES_LIST.admin ||
-        userRequester === comment.userId
-        ) {
-          const commentPostId = comment.postId;
-          Comments.destroy({
-            where: {
-              id: commentId,
-            }
+    .then( ( comment ) => {
+      if ( !comment ) {
+        return res.status( 404 ).json({ "error": "Le commentaire n'esxiste pas" });
+
+      // Verify if it is admin or a user who deletes his own comment.
+      } else if ( role === ROLES_LIST.admin || userRequester === comment.userId ) {
+        const commentPostId = comment.postId;
+        Comments.destroy({
+          where: { id: commentId }
+        })
+        .then( () => {
+          Posts.decrement(
+            { totalComments: 1 },
+            { where: { id: commentPostId }
           })
-          .then(() => {
-            console.log(commentPostId);
-            Posts.decrement(
-              { totalComments: 1 },
-              {
-                where: { id: commentPostId },
-              }
-            )
-            .then(() => {
-              return res.status(200).json({ "message": "Commentaire supprimé" });
-            })
+          .then( () => {
+            return res.status( 200 ).json({ "message": "Commentaire supprimé" });
           })
-          .catch((err)=> {
-            return res.status(500).json({"error": err.message});
-          })
-        } else {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Vous devez être administrateur ou le propietaire du commentaire pour lui effacer.",
-            });
-        }
-      })
-      .catch((err) => {
-        res.status(500).json({ DataBaseError: err.message });
-      });
+        })
+        .catch( ( err ) => {
+          return res.status(500).json({ "error": err.message} );
+        })
+
+      } else {
+        return res.status( 400 ).json({"error": "Vous devez être administrateur ou le propietaire du commentaire pour lui effacer."})
+      }
+    })
+    .catch( ( err ) => {
+      return res.status( 500 ).json({ "DataBaseError": err.message });
+    });
   }
 };

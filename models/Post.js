@@ -30,22 +30,30 @@ const Posts = sequelize.define(
     createdAt: {
       type: DataTypes.DATE,
       get: function () {
-        return this.getDataValue("createdAt").toLocaleString();
+        return this.getDataValue("createdAt")?.toLocaleString();
       },
     },
     updatedAt: {
       type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("updatedAt")?.toLocaleString();
+      },
     },
+    deletedAt: {
+      type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("deletedAt")?.toLocaleString();
+      }
+    }
   },
   { paranoid: true }
 );
 
-// un post can have a lot of comments but a comment belongs only to 1 post.
-Posts.hasMany(Comments, { onDelete: "cascade", hooks: true });
-Comments.belongsTo(Posts);
+// Associations
+Posts.hasMany(Comments, { onDelete: "cascade"});
+Comments.belongsTo(Posts, {onDelete: "cascade"});
 
-// un post can have many reports and a lot of reports but un report only is related to 1 post.
-Posts.hasMany(Reports, { onDelete: "cascade", hooks: true });
-Reports.belongsTo(Posts);
+Posts.hasMany(Reports, { onDelete: "cascade" });
+Reports.belongsTo(Posts,{onDelete: "cascade"});
 
 module.exports = Posts;

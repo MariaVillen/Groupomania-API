@@ -20,7 +20,8 @@
     "moment": "^2.29.3",
     "multer": "^1.4.4",
     "mysql2": "^2.3.3",
-    "sequelize": "^6.19.0"
+    "sequelize": "^6.19.0",
+    "sharp": "^0.30.6"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"

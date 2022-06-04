@@ -15,6 +15,24 @@ const Reports = sequelize.define("reports", {
   state: {
     type: DataTypes.ENUM("Non lu", "En cours", "Accepté", "Rejeté", "Archivé"),
     defaultValue: "Non lu"
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    get: function () {
+      return this.getDataValue("createdAt")?.toLocaleString();
+    },
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    get: function () {
+      return this.getDataValue("updatedAt")?.toLocaleString();
+    },
+  },
+  deletedAt: {
+    type: DataTypes.DATE,
+    get: function () {
+      return this.getDataValue("deletedAt")?.toLocaleString();
+    }
   }
 });
 

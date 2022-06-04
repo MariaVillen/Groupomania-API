@@ -16,7 +16,7 @@ const Users = sequelize.define(
       primaryKey: true,
     },
     lastName: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
         min: {
@@ -99,42 +99,42 @@ const Users = sequelize.define(
     },
     createdAt: {
       type: DataTypes.DATE,
-      // get: function () {
-      //   return this.getDataValue("createdAt").toLocaleString();
-      // },
+      get: function () {
+        return this.getDataValue("createdAt")?.toLocaleString();
+      },
     },
     updatedAt: {
       type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("updatedAt")?.toLocaleString();
+      },
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      get: function () {
+        return this.getDataValue("deletedAt")?.toLocaleString();
+      }
     }
   },
   { paranoid: true }
 ); // soft delete
 
+//Asociations
 
 Users.belongsToMany(Users, { as: "follows", through: 'User_Follow_User', foreignKey: 'followingId', otherKey: 'followedId' })
-// 1 user per Post but a User can have many posts.
+
 Users.hasMany(Posts)
 Posts.belongsTo(Users);
 
-// 1 user per comment but a user can make many comments.
 Users.hasMany(Comments);
 Comments.belongsTo(Users);
 
-// Like comments
-Users.belongsToMany(Comments, {
-  through: "likesComment",
-  onDelete: "CASCADE",
-});
+Users.belongsToMany(Comments, {through: "likesComment"});
+Comments.belongsToMany(Users, {through: "likesComment"});
 
-Comments.belongsToMany(Users, {
-  through: "likesComment",
-  onDelete: "CASCADE",
-});
-
-// a reporta has 1 user but a lot of users can make a lot of reports
 Users.hasMany(Reports);
 Reports.belongsTo(Users);
-// Like Posts
+
 Users.belongsToMany(Posts, { through: "User_Like_Post"});
 Posts.belongsToMany(Users, { through: "User_Like_Post"});
 

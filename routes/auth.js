@@ -6,16 +6,13 @@ const authController = require("../controllers/auth");
 
 const router = express.Router();
 
-// Sign up Route
-//http:/localhost:3000/api/signup
+// [POST] http:/localhost:3500/auth/signup
 router.post("/signup", limitRate, authController.postSignUp);
 
-// Login Route
-//http:/localhost:3000/api/login
+// [POST] http:/localhost:3500/auth/login
 router.post("/login", limitRate, authController.postLogin);
 
-// Logout Route
-//http:/localhost:3000/api/logout
+// [POST] http:/localhost:3500/auth/logout
 router.post("/logout", authController.postLogout);
 
 module.exports = router;
