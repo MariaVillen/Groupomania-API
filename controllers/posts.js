@@ -168,7 +168,8 @@ exports.updatePostById = async (req, res) => {
  
     const foundPost = await Posts.findByPk( postToUpdate );
 
-    if ( foundPost.userId !== req.userId || req.roles !== ROLES_LIST.admin ) {
+    if (  !(idOfRequestingUser === foundPost.userId ||
+      roleOfRequestingUser === ROLES_LIST.admin) ) {
       return res.status( 401 ).json({ "error":"Pas de privileges nécessaires" });
     }
 

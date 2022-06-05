@@ -139,4 +139,28 @@ Users.belongsToMany(Posts, { through: "User_Like_Post"});
 Posts.belongsToMany(Users, { through: "User_Like_Post"});
 
 
+// Create admin
+
+const createAdmin= async ()=>{
+ 
+  Users.findOne({
+    where: {email: "admin@groupomania.com"}
+  }).then( async (result) => {
+    if (!result) {
+
+      password = process.env.ADMIN_PASS;
+      const hashedPass = bcrypt.hash( password, 12 );
+      const newUser = await Users.create({
+        email: email,
+        password: hashedPass,
+        lastName: process.env.ADMIN_LASTNAME,
+        name: process.env.ADMIN_NAME,
+        role: "admin",
+        isActive: 1
+      });
+    }
+  })
+}
+
+
 module.exports = Users;

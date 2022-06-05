@@ -74,16 +74,16 @@ exports.refreshTokenHandler = async (req, res) => {
     console.log("el token se decodifico, vamos a ver si son los mismos usuariso el del token y el de la db L68");
     console.log( "Son distintos? ", (cookieTokenDecoded && (cookieTokenDecoded?.userId !== foundToken?.userId )));
     console.log("cookie ", cookieTokenDecoded?.userId);
-    console.log("TokenDB ", foundToken?.userId);
-
-    if ( cookieTokenDecoded && ( cookieTokenDecoded.userId !== foundToken.userId ) ) {
+    console.log("TokenDB ", foundToken?.user.id);
+    console.log(" foundtoken : ", foundToken);
+    if ( cookieTokenDecoded && ( cookieTokenDecoded?.userId !== foundToken?.user.id ) ) {
      // kill al tokens of userDB and TokenDB
      console.log("el token de usuario no es el mismo que el de la db");
      RefreshTokens.destroy({
       where: {
         [ Op.or ]: [
-          { userId: cookieTokenDecoded.userId },
-          { userId: foundToken.userId },
+          { userId: cookieTokenDecoded?.userId },
+          { userId: foundUser.id },
         ],
       }
     })
@@ -104,7 +104,7 @@ exports.refreshTokenHandler = async (req, res) => {
     console.log("todo ha ido bien L94");
   // Create new Refresh Token
   const newRefreshToken = jwt.sign(
-    { userId: foundToken.userId },
+    { userId: foundToken?.userId },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "1d" }                  // < ------------------ 1 day refresh token
   );
@@ -113,8 +113,8 @@ exports.refreshTokenHandler = async (req, res) => {
   const accessToken = jwt.sign(
     {
       UserInfo: {
-        userId: cookieTokenDecoded.userId,
-        userRole: ROLES_LIST[ foundToken.user.role ], // sends the code, not the name of role
+        userId: cookieTokenDecoded?.userId,
+        userRole: ROLES_LIST[ foundToken?.user.role ], // sends the code, not the name of role
       },
     },
     process.env.ACCESS_TOKEN_SECRET,
@@ -126,7 +126,7 @@ exports.refreshTokenHandler = async (req, res) => {
     { token: newRefreshToken }, 
     { where: {
     token: refreshToken,
-    userId: foundToken.userId}}
+    userId: foundToken?.userId}}
   )
   .then( ( result )=>{
 
@@ -147,8 +147,8 @@ exports.refreshTokenHandler = async (req, res) => {
     console.log("retornamos success 200");
 
     return res.status( 200 ).json( {
-        userId: foundToken.userId,
-        userRole: ROLES_LIST[foundToken.user.role],
+        userId: foundToken?.userId,
+        userRole: ROLES_LIST[foundToken?.user.role],
         accessToken: accessToken,
     } );
       
