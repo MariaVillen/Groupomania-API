@@ -124,7 +124,7 @@ exports.postLikeComment = (req, res) => {
           comment.hasUser( user )
           .then( ( isLiked ) => {  
             if ( isLiked ) {
-              return post.removeUser( user )
+              return comment.removeUser( user )
               .then( () => {
                 Comments.decrement( { likes: 1 },{  where: { id: idCommentLiked }} )
                 .then( (result)=>{

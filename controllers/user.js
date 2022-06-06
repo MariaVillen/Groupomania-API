@@ -1,6 +1,5 @@
 const fs = require("fs");
-const Op = require("sequelize");
-const sharp = require("sharp");
+const RefreshTokens = require("../models/RefreshToken");
 const bcrypt = require("bcryptjs");
 const { validation } = require("../helpers/validation");
 const ROLES_LIST = require("../utils/roles_list");
@@ -273,25 +272,90 @@ exports.deleteUser = (req, res) => {
     idOfRequestingUser === userToDelete
   ) {
 
-    Users.destroy({
-      where: {
-        id: userToDelete,
-      },
-    })
-    .then(() => {
+    Users.findByPk(userToDelete)
+    .then((user) => {
 
-      // Delete cookie
-      res.clearCookie("jwt", {
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-      });
+      if (user) {
+        
+        // Deleting images of profile user from server
 
-      return res.status( 200 ).json({ "message": "Utilisateur supprimé" });
+        if (user.coverPicture !== "") {
+          const filename = user.coverPicture.split("/images/covers/")[1];
+          fs.access(`images/covers/${filename}`, fs.constants.R_OK, (err) => {
+            if (err) {
+              console.error('No Read access');
+            } else {
+            console.log("borrando imagen avatar ", filename);
+            fs.unlink(`images/covers/${filename}`, (err) => {
+              if (err) {
+                console.log("error al borrar ", err);
+              } else {
+                Users.update({coverPicture:""}, {where :{ id: userToDelete}})
+                .catch( (err) =>{
+                  console.log("not updated on db");
+                })
+                console.log("borrado");
+              }
+            });
+            }
+          });
+        }
 
+        if (user.profilePicture !== "") {
+          const filename = user.profilePicture.split("/images/persons/")[1];
+          fs.access(`images/persons/${filename}`, fs.constants.R_OK, (err) => {
+            if (err) {
+              console.error('No Read access');
+            } else {
+            console.log("borrando imagen avatar ", filename);
+            fs.unlink(`images/persons/${filename}`, (err) => {
+              if (err) {
+                console.log("error al borrar ", err);
+              } else {
+                Users.update({profilePicture:""}, {where :{ id: userToDelete}})
+                .catch( (err) =>{
+                  console.log("not updated on db");
+                })
+                console.log("borrado");
+              }
+            });
+            }
+          });
+        }
+
+      // Delete refresh tokens
+      
+        RefreshTokens.destroy({
+        where: {userId: user.id} 
+        }).then( ()=>{
+
+          if (idOfRequestingUser === userToDelete) {
+
+            res.clearCookie("jwt", {
+              httpOnly: true,
+              sameSite: "none",
+              secure: true,
+            });
+          }
+
+          user.destroy().then(()=>{
+            return res.status( 200 ).json({ "message": "Utilisateur supprimé" });
+          })
+          .catch((err)=> {
+            return res.status(500).json({"error": `error ${err.message} destroying user`})
+          });
+
+        })
+        .catch((err) => {
+          return res.status(500).json({"error": `error ${err.message} destroying refresh tokens`})
+        })
+
+    } else {
+      return res.status(404).json({"error": "Utilisateur non trouvé"});
+    }
     })
     .catch(( err ) => {
-        return res.status( 500 ).json({"DataBaseError": err.message });
+        return res.status( 500 ).json({"DataBaseError": ` error ${err.message} at finding user`});
     });
 
   } else {
