@@ -46,7 +46,7 @@ exports.refreshTokenHandler = async (req, res) => {
           
         // Create new Refresh Token
         const newRefreshToken = jwt.sign(
-          { userId: foundToken?.userId },
+          { userId: tokenInDb?.userId },
           process.env.REFRESH_TOKEN_SECRET,
           { expiresIn: "1d" }                  // < ------------------ 1 day refresh token
         );
@@ -56,7 +56,7 @@ exports.refreshTokenHandler = async (req, res) => {
           {
             UserInfo: {
               userId: cookieTokenDecoded?.userId,
-              userRole: ROLES_LIST[ foundToken?.user.role ], // sends the code, not the name of role
+              userRole: ROLES_LIST[ tokenInDb?.user.role ], // sends the code, not the name of role
             },
           },
           process.env.ACCESS_TOKEN_SECRET,
@@ -70,7 +70,7 @@ exports.refreshTokenHandler = async (req, res) => {
             { token: newRefreshToken }, 
             { where: {
             token: refreshToken,
-            userId: foundToken?.user.id}}
+            userId: tokenInDb?.user.id}}
           )
           console.log("El antiguo refresh token se sustituyo por el nuevo y enviamos nuevo access y refresh token");     
           // Clean Old cookie
@@ -89,8 +89,8 @@ exports.refreshTokenHandler = async (req, res) => {
           console.log("retornamos success 200");
 
           return res.status( 200 ).json( {
-            userId: foundToken?.user.id,
-            userRole: ROLES_LIST[foundToken?.user.role],
+            userId: tokenInDb?.user.id,
+            userRole: ROLES_LIST[tokenInDb?.user.role],
             accessToken: accessToken,
           });
         } catch (err) {
