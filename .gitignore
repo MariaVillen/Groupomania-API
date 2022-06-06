@@ -4,10 +4,3 @@ Documents/
 my.drwaio
 .bak
 
-#discard images but not dir
-images/posts/*
-images/persons/*
-images/covers/*
-!images/posts/.gitkeep
-!images/persons/.gitkeep
-!images/covers/.gitkeep
