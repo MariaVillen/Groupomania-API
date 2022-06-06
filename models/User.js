@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../utils/database");
+const bcrypt = require("bcryptjs");
 
 const Posts = require("./Post");
 const Reports = require("./Report");
@@ -149,9 +150,9 @@ const createAdmin= async ()=>{
     if (!result) {
 
       password = process.env.ADMIN_PASS;
-      const hashedPass = bcrypt.hash( password, 12 );
+      const hashedPass = await bcrypt.hash( password, 12 );
       const newUser = await Users.create({
-        email: email,
+        email: "admin@groupomania.com",
         password: hashedPass,
         lastName: process.env.ADMIN_LASTNAME,
         name: process.env.ADMIN_NAME,
@@ -162,5 +163,6 @@ const createAdmin= async ()=>{
   })
 }
 
+createAdmin();
 
 module.exports = Users;

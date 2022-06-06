@@ -158,7 +158,7 @@ exports.postLogin = async (req, res) => {
         })
 
       } else {
-        
+
         console.log("no son validas- error 403");
         res.clearCookie( "jwt", { httpOnly: true, sameSite: "none", secure: true } );
         return res.status(403).json({"error":"Trying to login with an invalid cookie. You have been logout. Try again"});
