@@ -1,166 +1,123 @@
 const jwt = require("jsonwebtoken");
-const { Op } = require("sequelize");
 const ROLES_LIST = require("../utils/roles_list");
 
 const RefreshTokens = require("../models/RefreshToken");
 const Users = require("../models/User");
 
 
+
 // Get a new access token when it expires
 // [GET] http:/localhost:3500/api/refresh
 exports.refreshTokenHandler = async (req, res) => {
 
-  console.log("entra en refrshToken L11");
+  console.log("Entra a analizar el refreshToken");
 
   // 1 - Verify Cookies
-  const cookies = req.cookies;
+  const cookies = req.cookies?.jwt;
+  console.log("cookies " , cookies);
+  // 1.A ) No cookies sent (refresh token expired or not logged)
+  if ( !cookies ) {
+    console.log("las cookies no fueron enviadas. Error 403");
+    return res.status( 403 ).json({ 'error':'Refesh expired or user not logged. Have to login.' });
 
-  // 1.A ) No cookies sent
-  if ( !cookies?.jwt ) {
-    console.log("las cookies no fueron enviadas. Error 401");
-    return res.status( 401 ).json({ 'error':' No cookies sent' });
-  }
+  } else {
+    console.log("las cookies fueron enviadas ", cookies);
+    // 1.B) Cookies sent
 
-  // 1.B) Cookies sent
-  
-  const refreshToken = cookies.jwt;
+    const refreshToken = cookies;
+    console.log("contenido de refreshToken ");
+    // 2 - Verify cookie Token 
+    const cookieTokenDecoded = jwt.verify( refreshToken, process.env.REFRESH_TOKEN_SECRET)
 
-  // 2 - Verify cookie Token 
-  const cookieTokenDecoded = jwt.verify( refreshToken, process.env.REFRESH_TOKEN_SECRET)
-
-  // 3 - Search cookie in DB
-
-  RefreshTokens.findOne({
-    where: {
-      token: refreshToken
-    },
-    include: Users
-  })
-
-  // CASE TOKEN NOT FOUND IN DB
-  .then( ( foundToken ) => {
-
-    console.log("encontro el foundtoken? : ", foundToken?.token);
-
-    if ( !foundToken ) {
-
-      // reuse situation
-      res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
-
-      console.log(" UserId establecemos a quien borramos. Cookie: ", cookieTokenDecoded?.userId, " BD: ", foundToken?.userId, " resultado: ");
-      
-      const userId = ( cookieTokenDecoded ) ? cookieTokenDecoded.userId : foundToken.userId;
-
-      console.log("no lo encontró, destruimos todo");
-
-      RefreshTokens.destroy({
-          where: { userId: userId },
-      })
-      .then( ()=>{ 
-        console.log("enviamos respuest 403 L53");
-        return res.sendStatus( 403 )})
-      .catch( ( err )=> { 
-        console.log("enviamos respuesta 500 L56", err); 
-        return res.status( 500 ).json({ "DataBaseError": err.message })
-      })
-    } else {
-    console.log("continua al proximo")
-    return foundToken;}}
-  )
-  // FOUND TOKEN
-  // CASE FOUND TOKEN USER NOT EQUAL USER TOKEN DB
-  .then (( foundToken )=>{
+    if (!cookieTokenDecoded) {
+      console.log("Pero no son validas");
+      return res.status(403).json({ 'error': 'Invalid Token. You have to login'});
     
-    console.log("el token se decodifico, vamos a ver si son los mismos usuariso el del token y el de la db L68");
-    console.log( "Son distintos? ", (cookieTokenDecoded && (cookieTokenDecoded?.userId !== foundToken?.userId )));
-    console.log("cookie ", cookieTokenDecoded?.userId);
-    console.log("TokenDB ", foundToken?.user.id);
-    console.log(" foundtoken : ", foundToken);
-    if ( cookieTokenDecoded && ( cookieTokenDecoded?.userId !== foundToken?.user.id ) ) {
-     // kill al tokens of userDB and TokenDB
-     console.log("el token de usuario no es el mismo que el de la db");
-     RefreshTokens.destroy({
-      where: {
-        [ Op.or ]: [
-          { userId: cookieTokenDecoded?.userId },
-          { userId: foundUser.id },
-        ],
-      }
-    })
-    .then( ()=> { 
-      console.log("enviamos 403 2do then L82"); 
-      res.clearCookie( "jwt", { httpOnly: true, sameSite: "none", secure: true } );
-      return res.sendStatus( 403 )})
-    .catch( ( err )=> { 
-      console.log("enviamos 500 2othen l85"); 
-      console.log("error", err);
-      return res.status( 500 ).json({ "DataBaseError": err.message} )})
-    } 
-    return foundToken;
-  })
-
-  // SUCCESS
-  .then ( ( foundToken )=>{
-    console.log("todo ha ido bien L94");
-  // Create new Refresh Token
-  const newRefreshToken = jwt.sign(
-    { userId: foundToken?.userId },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "1d" }                  // < ------------------ 1 day refresh token
-  );
-
-  // Create a new access token
-  const accessToken = jwt.sign(
-    {
-      UserInfo: {
-        userId: cookieTokenDecoded?.userId,
-        userRole: ROLES_LIST[ foundToken?.user.role ], // sends the code, not the name of role
-      },
-    },
-    process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }                   // < ------------------ 15 minutes access token
-  );
-
-    console.log("hacemos el update del refresh token");
-  RefreshTokens.update(
-    { token: newRefreshToken }, 
-    { where: {
-    token: refreshToken,
-    userId: foundToken?.userId}}
-  )
-  .then( ( result )=>{
-
-    if ( result ) {
-
-    res.clearCookie( "jwt", { httpOnly: true, sameSite: "none", secure: true } ); 
-    // Send new Cookie
-
-    console.log("enviamos cookie y accessToken");
-    res.cookie( "jwt", newRefreshToken, {
-      httpOnly: true,
-      sameSite: "none",
-      secure: true,
-      maxAge: 24 * 60 * 60 * 1000,          // < ------------------ 1 day cookie
-    })
-
-    // Send new access token
-    console.log("retornamos success 200");
-
-    return res.status( 200 ).json( {
-        userId: foundToken?.userId,
-        userRole: ROLES_LIST[foundToken?.user.role],
-        accessToken: accessToken,
-    } );
-      
     } else {
-      console.log("retornamos error 400 L139");
-      return res.status( 400 ).json({ "error": "Can't update" });
-    }
-  })
-  })
-  .catch( ( err )=> {
-    console.log("error", err);
-    console.log("este es el ultimo catche respuest 500L145", err); 
-    return res.status( 500 ).json({ "DataBaseError": err.message })
-  })
+
+      // 3 - Search cookie in DB
+      try {
+      
+        const tokenInDb = await RefreshTokens.findOne({ where: { token: refreshToken}, include: Users })
+
+        if (tokenInDb && (tokenInDb.user.id === cookieTokenDecoded.userId)) {
+        
+        console.log("Las cookies se enviaron, son validas, se encontro el usuario en la base de datos y es el mismo que el del token enviado");
+          
+        // Create new Refresh Token
+        const newRefreshToken = jwt.sign(
+          { userId: foundToken?.userId },
+          process.env.REFRESH_TOKEN_SECRET,
+          { expiresIn: "1d" }                  // < ------------------ 1 day refresh token
+        );
+
+        // Create a new access token
+        const accessToken = jwt.sign(
+          {
+            UserInfo: {
+              userId: cookieTokenDecoded?.userId,
+              userRole: ROLES_LIST[ foundToken?.user.role ], // sends the code, not the name of role
+            },
+          },
+          process.env.ACCESS_TOKEN_SECRET,
+          { expiresIn: "15m" }                   // < ------------------ 15 minutes access token
+        );
+
+        // Update Token 
+
+        try {
+          await RefreshTokens.update(
+            { token: newRefreshToken }, 
+            { where: {
+            token: refreshToken,
+            userId: foundToken?.user.id}}
+          )
+          console.log("El antiguo refresh token se sustituyo por el nuevo y enviamos nuevo access y refresh token");     
+          // Clean Old cookie
+          res.clearCookie( "jwt", { httpOnly: true, sameSite: "none", secure: true } ); 
+            
+          // Send new refresh token via cookie
+          console.log("enviamos cookie y accessToken");
+          res.cookie( "jwt", newRefreshToken, {
+            httpOnly: true,
+            sameSite: "none",
+            secure: true,
+            maxAge: 24 * 60 * 60 * 1000,          // < ------------------ 1 day cookie
+          })
+
+          // Send new access token
+          console.log("retornamos success 200");
+
+          return res.status( 200 ).json( {
+            userId: foundToken?.user.id,
+            userRole: ROLES_LIST[foundToken?.user.role],
+            accessToken: accessToken,
+          });
+        } catch (err) {
+          console.log("Por alguna razon no se puedo hacer el update en la base de datos del nuevo token");
+          return res.status(500).json({"error": `Error: ${err} while updating refreshtoken`});
+        }
+
+        } else {
+          console.log("El token no se encontró en la base de datos o el que hay en la base de datos no coincide con el usuario que hay en el token enviado");
+          RefreshTokens.destroy({
+            where: { userId: cookieTokenDecoded.userId },
+          })
+          .then(() => {
+            console.log("retornamos error 403")
+            res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
+            return res.status(403).json({"error":"token not found in DB or not of a user id. Reuse Situation."})
+          })
+          .catch((err) => {
+            console.log("retornamos error 500");
+            return res.status(500).json({"error" : `Error ${err} while destroying refresh on reuse situation`});
+          })
+        }
+
+      } catch (error) {
+        console.log(" Hubo un error buscando en el base de datos al token");
+        return res.status(500).json({"message": `Error: ${error} while looking for token in DB`});
+      }
+    } 
+  }
 }

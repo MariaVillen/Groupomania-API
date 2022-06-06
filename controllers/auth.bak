@@ -47,7 +47,6 @@ exports.postSignUp = async (req, res) => {
 // Login user
 // [POST] http:/localhost:3500/auth/login
 exports.postLogin = async (req, res) => {
-
   // Recover email
   let { email, password } = req.body;
 
@@ -60,7 +59,6 @@ exports.postLogin = async (req, res) => {
   email = email.toLowerCase();
 
   // Find user with email and password
-
   try {
     const foundUser = await Users.findOne({
       where: { email: email },
@@ -82,33 +80,28 @@ exports.postLogin = async (req, res) => {
     }
 
     // The password is valid
+    // Creating new tokens
 
+    const accessToken = jwt.sign(
+      {UserInfo: {
+          userId: foundUser.id,
+          userRole: ROLES_LIST[foundUser.role], // send the code-role (Set with ROLES_LIST), not the name of role.
+      }},
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }             // < ------------------ 15 min refresh token
+    );
+
+    const newRefreshToken = jwt.sign(
+      { userId: foundUser.id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "1d" }             // < ------------------ 1 day refresh token
+    );
 
     // Cookies verification
     const cookies = req.cookies;
-    console.log("Login ok. Procedemos a ver si hay cookies");
+
     // Case: no cookies
     if ( !cookies?.jwt ) {
-      console.log("no hay cookies, logueamos");
-      try{
-
-        
-      // Creating new tokens
-
-      const accessToken = jwt.sign(
-        {UserInfo: {
-            userId: foundUser.id,
-            userRole: ROLES_LIST[foundUser.role], // send the code-role (Set with ROLES_LIST), not the name of role.
-        }},
-        process.env.ACCESS_TOKEN_SECRET,
-        { expiresIn: "15m" }             // < ------------------ 15 min refresh token
-      );
-
-      const newRefreshToken = jwt.sign(
-        { userId: foundUser.id },
-        process.env.REFRESH_TOKEN_SECRET,
-        { expiresIn: "1d" }             // < ------------------ 1 day refresh token
-      );
       // Save new refresh token to Db
       await RefreshTokens.create({
         token: newRefreshToken,
@@ -130,47 +123,77 @@ exports.postLogin = async (req, res) => {
         accessToken: accessToken,
       });
 
-      } catch (err) {
-
-        return res.status(500).json({ "error": `error ${err.message} while adding refresh token to db`});
-
-      }
       // Case: cookies found
     } else {
-      console.log("hay cookies. Verificamos si son validas");
-      const cookieTokenDecoded = jwt.verify( cookies.jwt, process.env.REFRESH_TOKEN_SECRET )
-      
-      if (cookieTokenDecoded) {
-        console.log("son validas. reuse situation error 403");
-        console.log("destruimos refresh token por reuse situation en login");
+      // In this moment we have a cookie and a user
+      // Get refreshToken from cookie
+      const refreshToken = cookies.jwt;
 
-        RefreshTokens.destroy({
-          where: { userId: cookieTokenDecoded.userId },
-        })
-        .then(() => {
-          console.log("retornamos error 403");
-          res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
-          return res.status(403).json({"error":"token not valid. Reuse Situation."})
-        })
-        .catch((err) => {
-          console.log("retornamos error 500");
-          return res.status(500).json({"error" : `Error ${err} while destroying refresh on reuse situation`});
-        })
+      // Erase old cookie
+      res.clearCookie( "jwt", {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+      });
 
-      } else {
-        
-        console.log("no son validas- error 403");
-        res.clearCookie( "jwt", { httpOnly: true, sameSite: "none", secure: true } );
-        return res.status(403).json({"error":"Trying to login with an invalid cookie. You have been logout. Try again"});
+      // Find token of cookie in DB
+      const foundToken = await RefreshTokens.findOne({ token: refreshToken });
 
-      }      
+      // No token in DB but there is a cookie : REUSE SITUATION.
+
+      if ( !foundToken ) {
+        // Extract data from the cookies token.
+        jwt.verify( refreshToken, process.env.REFRESH_TOKEN_SECRET,
+          async ( err, decodedToken ) => {
+            // Token is valid but not in db
+            if ( decodedToken ) {
+              // Destroy all refreshTokens of the user of the cookie
+              await RefreshTokens.destroy({
+                where: { userId: decodedToken.userId }
+              });
+
+              // Destroy all refreshTokens of the user logged.
+              await RefreshTokens.destroy({
+                where: { userId: foundUser.id }
+              });
+            }
+
+            // In all case send 403 (token not valid and not in db also)
+            return res.sendStatus( 403 ); // Forbidden;
+          }
+        );
+      }
+
+      // Cookie found in DB an there is a cookie
+      // Old token found, update and change it for the new refresh token
+      await foundToken.destroy();
+
+      await RefreshTokens.create({
+        token: newRefreshToken,
+        userId: foundUser.id,
+      });
+
+      // Send new cookies
+      res.cookie("jwt", newRefreshToken, {
+        httpOnly: true,
+        sameSite: "none",
+        secure: true,
+        maxAge: 24 * 60 * 60 * 1000, // < ------------------ 1 day cookie
+      });
+
+      // Sent new access token
+
+      return res.status( 200 ).json({
+        userId: foundUser.id,
+        userRole: ROLES_LIST[ foundUser.role ],
+        accessToken: accessToken,
+      });
     }
-  } catch (err) {
-    console.log("se produce un error al buscar el usuario en la base de datos");
-    return res.status(500).json({ "error": `error ${err.message} while founding user to login`})
+  } catch ( err ) {
+    console.log("error", err);
+    return res.status(500).json({"DataBaseError" : err.message });
   }
-}
-
+};
 
 // Logout Controller
 // [POST] http:/localhost:3500/auth/logout
@@ -215,9 +238,8 @@ exports.postLogout = async (req, res) => {
 
       return res.sendStatus( 204 ); //Ok but no content to send}
     }
-
   } catch ( err ) {
     console.log("error", err);
-    return res.status(500).json({ "error" : `${err.message} while founding token in DB `})
+    return res.status( 500 ).json({ "error" : err.message });
   }
-}
+};
